@@ -4,8 +4,8 @@ import { analyzeBrand } from '../engine/brand-analyzer.js';
 import { pickModules, MODULES } from '../engine/module-picker.js';
 import { buildSite } from '../engine/site-builder.js';
 import { publishSite, loadRegistry, deleteSite } from '../engine/publisher.js';
-import { generateHeroImages } from '../engine/image-generator.js';
-import { submitVideoTask, pollVideoTask } from '../engine/video-generator.js';
+import { generateHeroImages, hasImageGen } from '../engine/image-generator.js';
+import { submitVideoTask, pollVideoTask, hasVideoGen } from '../engine/video-generator.js';
 import { scrapeUrl } from '../engine/scraper.js';
 import type { GeneratedSite } from '../types/index.js';
 
@@ -99,13 +99,13 @@ export const mcpTools = [
         args.description, args.sourceUrl, args.language ?? 'es', args.socialUrls,
       );
 
-      // Inject media URLs into brand card if provided
-      if (args.heroImageUrl) brand.heroImageUrl = args.heroImageUrl;
-      if (args.heroVideoUrl) brand.heroVideoUrl = args.heroVideoUrl;
-      if (args.galleryImageUrls?.length) brand.galleryImageUrls = args.galleryImageUrls;
-
       const modules = pickModules(args.businessType, args.preferredModules);
-      const html = await buildSite(brand, modules);
+      const html = await buildSite(
+        brand, modules,
+        args.heroImageUrl,
+        args.heroVideoUrl,
+        args.galleryImageUrls,
+      );
 
       const site: GeneratedSite = {
         id: randomUUID(),
@@ -328,6 +328,155 @@ export const mcpTools = [
       } catch (err: any) {
         return { content: [{ type: 'text', text: `Scrape failed: ${err.message}` }], isError: true };
       }
+    },
+  },
+
+  {
+    name: 'generate_site_auto',
+    description: 'Full automatic pipeline: scrape URL → analyze brand → generate AI images → generate video → build and publish site. Returns the published site URL. Use this when the client wants a complete site in one step. Requires KIEAI_API_KEY for image/video generation. If not configured, site is built with placeholder assets.',
+    inputSchema: z.object({
+      businessName: z.string().describe('Name of the business'),
+      businessType: z.enum(BUSINESS_TYPES),
+      mood: z.enum(MOODS),
+      theme: z.enum(['dark', 'light']),
+      language: z.enum(['es', 'en']).optional().default('es'),
+      sourceUrl: z.string().optional().describe('Existing website URL to scrape brand data from'),
+      socialUrls: z.array(z.string()).optional().describe('Social media profile URLs to scrape'),
+      description: z.string().optional().describe('Optional business description to enrich copy'),
+      generateImages: z.boolean().optional().default(true).describe('Whether to generate AI hero images (requires KIEAI_API_KEY)'),
+      generateVideo: z.boolean().optional().default(true).describe('Whether to generate a hero video from the first image (requires KIEAI_API_KEY and BASE_URL accessible from internet)'),
+      imageCount: z.number().min(1).max(4).optional().default(2).describe('Number of hero images to generate'),
+      preferredModules: z.array(z.string()).optional().describe('Module IDs to prefer'),
+    }),
+    handler: async (args: any) => {
+      const steps: string[] = [];
+      const warnings: string[] = [];
+
+      // Step 1: Analyze brand (includes scraping if sourceUrl/socialUrls provided)
+      steps.push('1. Analyzing brand...');
+      const brand = await analyzeBrand(
+        args.businessName, args.businessType, args.mood, args.theme,
+        args.description, args.sourceUrl, args.language ?? 'es', args.socialUrls,
+      );
+      steps.push(`   ✓ Brand card created for "${brand.name}"`);
+      if (brand.socialData) steps.push(`   ✓ Social data scraped: ${brand.socialData.platform ?? 'web'}`);
+
+      // Step 2: Generate images
+      let heroImageUrl: string | undefined;
+      let galleryImageUrls: string[] | undefined;
+
+      if (args.generateImages !== false) {
+        if (hasImageGen()) {
+          steps.push('2. Generating AI images...');
+          try {
+            const images = await generateHeroImages(
+              args.businessName, args.businessType, args.mood, 'neutral', args.imageCount ?? 2,
+            );
+            heroImageUrl = `${BASE_URL}${images[0]!.publicUrl}`;
+            galleryImageUrls = images.slice(1).map((img: any) => `${BASE_URL}${img.publicUrl}`);
+            steps.push(`   ✓ Generated ${images.length} image(s)`);
+          } catch (err: any) {
+            warnings.push(`Image generation failed: ${err.message}. Site built without AI images.`);
+            steps.push('   ⚠ Image generation failed — skipped');
+          }
+        } else {
+          warnings.push('KIEAI_API_KEY not configured — skipping image generation.');
+          steps.push('2. Skipped image generation (KIEAI_API_KEY not set)');
+        }
+      } else {
+        steps.push('2. Skipped image generation (disabled by user)');
+      }
+
+      // Step 3: Generate video from first image
+      let heroVideoUrl: string | undefined;
+
+      if (args.generateVideo !== false && heroImageUrl) {
+        if (hasVideoGen()) {
+          steps.push('3. Submitting video generation task...');
+          try {
+            const videoTask = await submitVideoTask(
+              heroImageUrl,
+              'cinematic scene',
+              'slowly revealed',
+              `${args.mood} atmospheric`,
+              args.businessName,
+              args.businessType,
+            );
+            // Poll until completed or timeout (3 min max)
+            let task = videoTask;
+            const maxAttempts = 12;
+            for (let i = 0; i < maxAttempts; i++) {
+              await new Promise(r => setTimeout(r, 15000));
+              task = await pollVideoTask(task.taskId);
+              if (task.status === 'completed' || task.status === 'failed') break;
+            }
+            if (task.status === 'completed' && task.publicUrl) {
+              heroVideoUrl = `${BASE_URL}${task.publicUrl}`;
+              steps.push(`   ✓ Video generated: ${task.publicUrl}`);
+            } else {
+              warnings.push(`Video generation did not complete in time (status: ${task.status}). Site built with image only.`);
+              steps.push(`   ⚠ Video timed out (status: ${task.status}) — skipped`);
+            }
+          } catch (err: any) {
+            warnings.push(`Video generation failed: ${err.message}. Site built with image only.`);
+            steps.push('   ⚠ Video generation failed — skipped');
+          }
+        } else {
+          warnings.push('KIEAI_API_KEY not configured — skipping video generation.');
+          steps.push('3. Skipped video generation (KIEAI_API_KEY not set)');
+        }
+      } else if (!heroImageUrl) {
+        steps.push('3. Skipped video generation (no image available)');
+      } else {
+        steps.push('3. Skipped video generation (disabled by user)');
+      }
+
+      // Step 4: Build and publish site
+      steps.push('4. Building and publishing site...');
+      const modules = pickModules(args.businessType, args.preferredModules);
+      const html = await buildSite(
+        brand, modules,
+        heroImageUrl,
+        heroVideoUrl,
+        galleryImageUrls,
+      );
+
+      const site: GeneratedSite = {
+        id: randomUUID(),
+        slug: brand.slug,
+        brandCard: brand,
+        modules,
+        html,
+        createdAt: new Date().toISOString(),
+        url: '',
+        status: 'generating',
+      };
+
+      const published = publishSite(site, BASE_URL);
+      steps.push(`   ✓ Site published at ${published.url}`);
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            message: `Site auto-generated successfully for "${args.businessName}"`,
+            url: published.url,
+            slug: published.slug,
+            assets: {
+              heroImage: heroImageUrl ?? null,
+              heroVideo: heroVideoUrl ?? null,
+              galleryImages: galleryImageUrls ?? [],
+            },
+            modules: {
+              primary: modules.primary.name,
+              secondary: modules.secondary?.name ?? null,
+              tertiary: modules.tertiary?.name ?? null,
+            },
+            steps,
+            warnings: warnings.length > 0 ? warnings : undefined,
+          }, null, 2),
+        }],
+      };
     },
   },
 

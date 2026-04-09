@@ -499,6 +499,96 @@ El servidor MCP permite que Claude u otros LLMs consuman el builder como herrami
 | `check_video_status` | Consulta el estado de una tarea de video por taskId |
 | `scrape_brand` | Raspa datos de marca desde una URL o red social |
 | `list_generations` | Lista imágenes y videos generados almacenados |
+| `generate_site_auto` | **Pipeline completo automático**: scrape → brand → imágenes → video → sitio publicado |
+
+### Parámetros principales por herramienta
+
+#### `analyze_brand`
+```json
+{
+  "businessName": "Mi Restaurante",
+  "businessType": "restaurant-food",
+  "mood": "warm",
+  "theme": "dark",
+  "language": "es",
+  "description": "Descripción opcional del negocio",
+  "sourceUrl": "https://mirestaurante.com",
+  "socialUrls": ["https://instagram.com/mirestaurante"]
+}
+```
+> **businessType**: `saas-tech` | `agency-studio` | `ecommerce` | `restaurant-food` | `portfolio-creative` | `luxury-jewelry` | `real-estate` | `fitness-health` | `auto-detailing` | `professional-services` | `music-events` | `education` | `beauty-salon` | `legal-finance` | `construction` | `pet-services` | `nonprofit` | `photography` | `travel-tourism` | `gaming-esports` | `other`
+>
+> **mood**: `premium` | `playful` | `technical` | `warm` | `minimal` | `bold`
+
+#### `generate_images`
+```json
+{
+  "businessName": "Mi Restaurante",
+  "businessType": "restaurant-food",
+  "mood": "warm",
+  "palette": "warm amber",
+  "count": 2
+}
+```
+> Requiere `KIEAI_API_KEY`. Devuelve URLs públicas usables en `create_site`.
+
+#### `generate_video`
+```json
+{
+  "imageUrl": "https://tudominio.com/generations/images/abc.jpg",
+  "businessName": "Mi Restaurante",
+  "businessType": "restaurant-food",
+  "subject": "plato gourmet con vapor",
+  "action": "vapor rising slowly",
+  "mood": "warm cinematic"
+}
+```
+> Requiere `KIEAI_API_KEY` y que `imageUrl` sea accesible desde internet (ngrok o VPS).
+> Devuelve un `taskId`. Usa `check_video_status` para esperar el resultado.
+
+#### `check_video_status`
+```json
+{
+  "taskId": "abc123"
+}
+```
+> Devuelve `status`: `pending` | `processing` | `completed` | `failed`.
+> Cuando `completed`, incluye `publicUrl` para usar en `create_site`.
+
+#### `create_site`
+```json
+{
+  "businessName": "Mi Restaurante",
+  "businessType": "restaurant-food",
+  "mood": "warm",
+  "theme": "dark",
+  "language": "es",
+  "sourceUrl": "https://mirestaurante.com",
+  "heroImageUrl": "/generations/images/abc.jpg",
+  "heroVideoUrl": "/generations/videos/xyz.mp4",
+  "galleryImageUrls": ["/generations/images/def.jpg"],
+  "preferredModules": []
+}
+```
+
+#### `generate_site_auto` ⚡ Pipeline completo
+```json
+{
+  "businessName": "Mi Restaurante",
+  "businessType": "restaurant-food",
+  "mood": "warm",
+  "theme": "dark",
+  "language": "es",
+  "sourceUrl": "https://mirestaurante.com",
+  "socialUrls": ["https://instagram.com/mirestaurante"],
+  "generateImages": true,
+  "generateVideo": true,
+  "imageCount": 2
+}
+```
+> Ejecuta todo el pipeline automáticamente en una sola llamada.
+> Si `KIEAI_API_KEY` no está configurado, genera el sitio sin imágenes/video de IA.
+> Puedes deshabilitar pasos: `"generateImages": false` o `"generateVideo": false`.
 
 ### Autenticación
 
@@ -631,18 +721,31 @@ claude mcp add saraviamtech-builder \
   --env MCP_TOKEN=tu-token-secreto-fuerte
 ```
 
-### Flujo de trabajo típico con Claude
+### Flujo de trabajo con Claude
 
-Una vez integrado, Claude puede ejecutar un flujo completo:
+#### Modo automático (una sola llamada) ⚡
 
 ```
-1. scrape_brand(url) → extrae colores, bio, imágenes
-2. generate_images(businessName, businessType, mood) → genera imágenes hero
-3. generate_video(imageUrl, businessName, ...) → inicia video (retorna taskId)
-4. check_video_status(taskId) → espera hasta "completed"
-5. create_site(... heroImageUrl, heroVideoUrl) → genera el sitio final
-6. get_site(slug) → devuelve la URL pública del sitio
+generate_site_auto(businessName, businessType, mood, theme, sourceUrl, socialUrls)
+  → scrape + brand + imágenes + video + sitio publicado
+  → retorna: { url, slug, assets: { heroImage, heroVideo, galleryImages } }
 ```
+
+#### Modo paso a paso (control total) 🎛️
+
+```
+1. scrape_brand(url)            → extrae colores, bio, imágenes del sitio real
+2. analyze_brand(...)           → genera brand card con paleta, tipografía y copy
+3. recommend_modules(...)       → sugiere módulos de animación para la industria
+4. generate_images(...)         → genera imágenes hero via IA (retorna publicUrls)
+5. generate_video(imageUrl)     → inicia generación de video (retorna taskId)
+6. check_video_status(taskId)   → espera hasta status "completed"
+7. create_site(... heroImageUrl, heroVideoUrl) → construye y publica el sitio
+8. get_site(slug)               → devuelve URL pública + HTML completo
+```
+
+> Ambos modos están disponibles. El modo paso a paso permite validar cada etapa,
+> reusar assets generados o saltear pasos (ej. el cliente ya tiene sus propias imágenes).
 
 ---
 
