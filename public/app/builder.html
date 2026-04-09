@@ -802,6 +802,16 @@
             <div class="dropzone-label">Arrastra imágenes aquí o haz clic para seleccionar</div>
             <div class="dropzone-sub">JPG, PNG, WebP · Máx 100 MB por archivo</div>
           </div>
+          <div style="background:rgba(79,70,229,0.07);border:1px solid rgba(79,70,229,0.2);border-radius:0.625rem;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.78rem;color:var(--muted2);line-height:1.6;">
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.8rem;">Tamaños ideales para mejores resultados</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 1.5rem;">
+              <div><span style="color:var(--accent);font-weight:600;">Hero / Banner</span> — 1920×1080 px (16:9)</div>
+              <div><span style="color:var(--accent);font-weight:600;">Galería / Grid</span> — mínimo 800×600 px</div>
+              <div><span style="color:var(--accent);font-weight:600;">Carrusel</span> — 1200×800 px (3:2) o 16:9</div>
+              <div><span style="color:var(--accent);font-weight:600;">Masonry</span> — cualquier proporción (se adapta)</div>
+            </div>
+            <div style="margin-top:0.5rem;color:var(--muted);font-size:0.74rem;">Las imágenes muy pequeñas (menores a 400 px) pueden verse pixeladas. Evita proporciones extremas como 1:5 o 5:1.</div>
+          </div>
           <div class="image-grid" id="upload-image-grid">
             <div style="grid-column:1/-1;color:var(--muted);font-size:0.8rem;text-align:center;padding:1rem;">Sin imágenes subidas aún.</div>
           </div>
@@ -865,7 +875,17 @@
           </div>
           <div class="alert alert-info" id="video-poll-msg">
             <div class="spinner"></div>
-            Kling 3.0 Pro puede tardar 3-5 min. Polleando cada 10s...
+            Kling 3.0 puede tardar 3-5 min. Consultando estado cada 10s...
+          </div>
+          <div style="background:rgba(79,70,229,0.07);border:1px solid rgba(79,70,229,0.2);border-radius:0.625rem;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.78rem;color:var(--muted2);line-height:1.6;">
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.8rem;">Sobre el video generado por Kling 3.0</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 1.5rem;">
+              <div><span style="color:var(--accent);font-weight:600;">Resolución de salida</span> — 1280×720 px (HD)</div>
+              <div><span style="color:var(--accent);font-weight:600;">Proporción</span> — 16:9 (horizontal)</div>
+              <div><span style="color:var(--accent);font-weight:600;">Duración</span> — 5 segundos</div>
+              <div><span style="color:var(--accent);font-weight:600;">Formato</span> — MP4 (H.264)</div>
+            </div>
+            <div style="margin-top:0.5rem;color:var(--muted);font-size:0.74rem;">Para mejores resultados, la imagen de entrada debe ser 1920×1080 px o mayor en proporción 16:9. Imágenes verticales o cuadradas pueden generar encuadres inesperados en el video.</div>
           </div>
         </div>
 
@@ -876,6 +896,16 @@
             <div class="dropzone-icon">🎬</div>
             <div class="dropzone-label">Arrastra videos aquí o haz clic para seleccionar</div>
             <div class="dropzone-sub">MP4, WebM, MOV · Máx 100 MB por archivo</div>
+          </div>
+          <div style="background:rgba(79,70,229,0.07);border:1px solid rgba(79,70,229,0.2);border-radius:0.625rem;padding:0.75rem 1rem;margin-top:0.75rem;font-size:0.78rem;color:var(--muted2);line-height:1.6;">
+            <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;font-size:0.8rem;">Especificaciones recomendadas para el video hero</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 1.5rem;">
+              <div><span style="color:var(--accent);font-weight:600;">Resolución</span> — 1920×1080 px (Full HD) o superior</div>
+              <div><span style="color:var(--accent);font-weight:600;">Proporción</span> — 16:9 (horizontal)</div>
+              <div><span style="color:var(--accent);font-weight:600;">Formato</span> — MP4 (H.264) recomendado</div>
+              <div><span style="color:var(--accent);font-weight:600;">Duración</span> — 5 a 30 segundos ideal</div>
+            </div>
+            <div style="margin-top:0.5rem;color:var(--muted);font-size:0.74rem;">Videos verticales (9:16) o cuadrados se recortarán para ajustarse al hero. Se recomienda 16:9 para evitar franjas negras o recortes.</div>
           </div>
           <div class="video-grid" id="upload-video-grid">
             <div style="grid-column:1/-1;color:var(--muted);font-size:0.8rem;text-align:center;padding:1rem;">Sin videos subidos aún.</div>
