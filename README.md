@@ -215,6 +215,8 @@ Ambas claves son opcionales — el builder usa plantillas determinísticas si la
 
 ## Instalación y Ejecución
 
+### Desarrollo Local (Windows, Mac, Linux)
+
 ```bash
 # Instalar dependencias
 npm install
@@ -222,15 +224,200 @@ npm install
 # Compilar TypeScript
 npm run build
 
-# Desarrollo (hot reload)
+# Desarrollo (hot reload con cambios automáticos)
 npm run dev
 
-# Producción
+# Producción (compilado, sin hot reload)
 npm start
 
-# Servidor MCP
+# Servidor MCP (para integración con Claude)
 npm run mcp
 ```
+
+Accede a `http://localhost:3000` en tu navegador.
+
+---
+
+### Instalación VPS Linux (DigitalOcean, Linode, AWS, etc.)
+
+**1. Conectarse al servidor via SSH**
+```bash
+ssh user@tu-ip-vps
+```
+
+**2. Instalar Node.js 20+ (si no está)**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt update && sudo apt install nodejs
+node --version  # Verificar
+```
+
+**3. Clonar el repositorio**
+```bash
+cd /home/user
+git clone https://github.com/juanelot/saraviamtech-builder.git
+cd saraviamtech-builder
+```
+
+**4. Crear archivo `.env` con credenciales**
+```bash
+nano .env
+```
+Agregar:
+```env
+OPENAI_API_KEY=sk-...
+KIEAI_API_KEY=...
+PORT=3000
+NODE_ENV=production
+```
+Guardar: `Ctrl+O` → Enter → `Ctrl+X`
+
+**5. Instalar dependencias y compilar**
+```bash
+npm install
+npm run build
+```
+
+**6. Instalar PM2 (mantiene el proceso vivo)**
+```bash
+sudo npm install -g pm2
+pm2 start npm --name "saraviam-builder" -- start
+pm2 startup
+pm2 save
+```
+
+**7. (Opcional) Configurar Nginx como reverse proxy**
+```bash
+sudo apt install nginx
+sudo nano /etc/nginx/sites-available/default
+```
+
+Reemplazar el contenido con:
+```nginx
+server {
+  listen 80;
+  server_name tu-dominio.com;
+
+  location / {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+  }
+}
+```
+
+Reiniciar Nginx:
+```bash
+sudo systemctl restart nginx
+```
+
+**8. (Opcional) SSL con Let's Encrypt (HTTPS)**
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d tu-dominio.com
+```
+
+---
+
+### Instalación con Docker
+
+**Requisitos:** Docker y Docker Compose instalados.
+
+**1. Clonar repo**
+```bash
+git clone https://github.com/juanelot/saraviamtech-builder.git
+cd saraviamtech-builder
+```
+
+**2. Crear archivo `.env`**
+```bash
+nano .env
+```
+```env
+OPENAI_API_KEY=sk-...
+KIEAI_API_KEY=...
+PORT=3000
+NODE_ENV=production
+```
+
+**3. Ejecutar con Docker Compose**
+```bash
+docker-compose up -d
+```
+
+El contenedor correrá en `http://localhost:3000`
+
+**Ver logs:**
+```bash
+docker-compose logs -f
+```
+
+**Detener:**
+```bash
+docker-compose down
+```
+
+**Archivo `Dockerfile` incluido** — se usa automáticamente con `docker-compose`.
+
+---
+
+### Despliegue con Portainer
+
+**1. En Portainer, ir a `Stacks` → `Add Stack`**
+
+**2. Seleccionar `Repository`**
+
+**3. Llenar:**
+- **Repository URL:** `https://github.com/juanelot/saraviamtech-builder.git`
+- **Repository reference:** `main`
+- **Compose file path:** `docker-compose.yml`
+
+**4. En `Environment variables`, agregar:**
+```
+OPENAI_API_KEY=sk-...
+KIEAI_API_KEY=...
+PORT=3000
+NODE_ENV=production
+```
+
+**5. Deploy**
+
+Portainer detectará y desplegará automáticamente desde Docker Compose.
+
+---
+
+### Despliegue con Dockploy
+
+**1. Crear proyecto en Dockploy**
+
+**2. Conectar repositorio GitHub:** `https://github.com/juanelot/saraviamtech-builder`
+
+**3. Seleccionar rama:** `main`
+
+**4. Agregar variables de entorno:**
+```
+OPENAI_API_KEY=sk-...
+KIEAI_API_KEY=...
+PORT=3000
+NODE_ENV=production
+```
+
+**5. Deploy** — Dockploy usará automáticamente `docker-compose.yml`
+
+---
+
+### Resumen de Métodos
+
+| Método | Caso de uso | Facilidad |
+|---|---|---|
+| **npm local** | Desarrollo, máquina personal | ⭐⭐⭐ |
+| **VPS manual** | Producción en servidor propio | ⭐⭐ |
+| **Docker** | Producción consistente, portátil | ⭐⭐⭐ |
+| **Portainer** | UI visual, múltiples contenedores | ⭐⭐⭐⭐ |
+| **Dockploy** | Despliegue automático desde GitHub | ⭐⭐⭐⭐⭐ |
 
 ---
 
