@@ -528,6 +528,8 @@ Edita el archivo de configuración de Claude Desktop:
 **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### 1. Desarrollo Local (con ngrok)
+
 ```json
 {
   "mcpServers": {
@@ -537,7 +539,7 @@ Edita el archivo de configuración de Claude Desktop:
       "env": {
         "OPENAI_API_KEY": "sk-...",
         "KIEAI_API_KEY": "...",
-        "BASE_URL": "http://localhost:3000",
+        "BASE_URL": "https://abc123.ngrok-free.app",
         "MCP_TOKEN": "tu-token-secreto-aqui"
       }
     }
@@ -545,7 +547,50 @@ Edita el archivo de configuración de Claude Desktop:
 }
 ```
 
-O usando `tsx` en desarrollo (sin compilar):
+**Pasos:**
+1. Instala ngrok: `npm install -g ngrok`
+2. En una terminal: `ngrok http 3000` (copia la URL HTTPS)
+3. Reemplaza `abc123.ngrok-free.app` con tu URL de ngrok
+4. Compila: `npm run build`
+5. Reinicia Claude Desktop
+
+#### 2. VPS / Producción
+
+```json
+{
+  "mcpServers": {
+    "saraviamtech-builder": {
+      "command": "node",
+      "args": ["/home/usuario/saraviamtech-builder/dist/mcp/server.js"],
+      "cwd": "/home/usuario/saraviamtech-builder",
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "KIEAI_API_KEY": "...",
+        "BASE_URL": "https://tudominio.com",
+        "MCP_TOKEN": "tu-token-secreto-fuerte"
+      }
+    }
+  }
+}
+```
+
+**Pasos:**
+1. En el VPS, clona el proyecto: `git clone https://github.com/tuuser/saraviamtech-builder.git`
+2. Instala dependencias: `cd saraviamtech-builder && npm install`
+3. Compila: `npm run build`
+4. Inicia con PM2:
+   ```bash
+   pm2 start dist/mcp/server.js --name saraviamtech-mcp \
+     --env "OPENAI_API_KEY=sk-..." \
+     --env "KIEAI_API_KEY=..." \
+     --env "BASE_URL=https://tudominio.com" \
+     --env "MCP_TOKEN=tu-token-secreto-fuerte"
+   pm2 save
+   ```
+5. Reemplaza `/home/usuario` y `tudominio.com` con tus valores reales
+6. Reinicia Claude Desktop
+
+#### 3. Desarrollo Local (sin compilar con tsx)
 
 ```json
 {
@@ -556,7 +601,7 @@ O usando `tsx` en desarrollo (sin compilar):
       "env": {
         "OPENAI_API_KEY": "sk-...",
         "KIEAI_API_KEY": "...",
-        "BASE_URL": "http://localhost:3000",
+        "BASE_URL": "https://abc123.ngrok-free.app",
         "MCP_TOKEN": "tu-token-secreto-aqui"
       }
     }
@@ -566,13 +611,24 @@ O usando `tsx` en desarrollo (sin compilar):
 
 ### Configurar en Claude Code (CLI)
 
+**Local con ngrok:**
 ```bash
 claude mcp add saraviamtech-builder \
   --command "node /ruta/al/proyecto/dist/mcp/server.js" \
   --env OPENAI_API_KEY=sk-... \
   --env KIEAI_API_KEY=... \
-  --env BASE_URL=http://localhost:3000 \
+  --env BASE_URL=https://abc123.ngrok-free.app \
   --env MCP_TOKEN=tu-token-secreto-aqui
+```
+
+**VPS / Producción:**
+```bash
+claude mcp add saraviamtech-builder \
+  --command "node /home/usuario/saraviamtech-builder/dist/mcp/server.js" \
+  --env OPENAI_API_KEY=sk-... \
+  --env KIEAI_API_KEY=... \
+  --env BASE_URL=https://tudominio.com \
+  --env MCP_TOKEN=tu-token-secreto-fuerte
 ```
 
 ### Flujo de trabajo típico con Claude
