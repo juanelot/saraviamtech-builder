@@ -1,51 +1,51 @@
 # SaraviamTech Builder
 
-AI-powered cinematic website generator. Analyzes a business, scrapes brand data, and produces a unique, production-ready HTML site with dynamic layouts, animations, AI-generated images, and videos — all in one request.
+Generador de sitios web cinematográficos impulsado por IA. Analiza un negocio, extrae datos de marca, y produce un sitio HTML único y listo para producción con layouts dinámicos, animaciones, imágenes y videos generados por IA — todo en una sola solicitud.
 
 ---
 
-## What it does
+## Qué hace
 
-1. **Brand Analysis** — Takes business name, type, mood, theme, and optional description or social URLs. Uses GPT-4o to generate copywriting (headlines, taglines, descriptions, CTAs) in Spanish or English.
-2. **Social & Web Scraping** — Scrapes Instagram, Facebook, LinkedIn, TikTok, Twitter, and websites to extract brand colors, bio, images, and headlines automatically.
-3. **Layout Direction** — An AI layout director selects a unique section pipeline (hero + 8–12 sections) based on the business personality, with 40+ available section types.
-4. **Cinematic Modules** — Injects interactive animation modules (scroll-driven, cursor/hover, click/tap, ambient) selected by the AI based on industry and mood.
-5. **AI Image Generation** — Generates hero and gallery images via **nano-banana (kie.ai / Flux)** with LLM-crafted prompts specific to the business industry, mood, and visual style.
-6. **AI Video Generation** — Generates a cinematic hero video via **Kling 3.0 (kie.ai)** with LLM-crafted prompts tailored to the industry, subject, and mood — no generic templates.
-7. **Site Output** — Produces a standalone HTML file served at `/sites/:slug`, registered in a live site registry.
+1. **Análisis de Marca** — Recibe nombre del negocio, tipo, mood, tema e descripción opcional o URLs sociales. Usa GPT-4o para generar copywriting (titulares, taglines, descripciones, CTAs) en español o inglés.
+2. **Scraping Social y Web** — Raspa Instagram, Facebook, LinkedIn, TikTok, Twitter y sitios web para extraer colores de marca, bio, imágenes y titulares automáticamente.
+3. **Director de Layout** — Un director de layout con IA selecciona un pipeline de secciones único (hero + 8–12 secciones) basado en la personalidad del negocio, con más de 40 tipos de secciones disponibles.
+4. **Módulos Cinematográficos** — Inyecta módulos de animación interactivos (scroll-driven, cursor/hover, click/tap, ambiente) seleccionados por la IA según industria y mood.
+5. **Generación de Imágenes con IA** — Genera imágenes hero y de galería via **nano-banana (kie.ai / Flux)** con prompts elaborados por LLM específicos a la industria, mood y estilo visual del negocio.
+6. **Generación de Video con IA** — Genera un video hero cinematográfico via **Kling 3.0 (kie.ai)** con prompts elaborados por LLM adaptados a la industria, sujeto y mood — sin plantillas genéricas.
+7. **Salida del Sitio** — Produce un archivo HTML standalone servido en `/sites/:slug`, registrado en un registro de sitios en vivo.
 
 ---
 
-## Tech Stack
+## Stack Tecnológico
 
-| Layer | Technology |
+| Capa | Tecnología |
 |---|---|
 | Runtime | Node.js + TypeScript |
-| Server | Express.js |
-| AI Copy | OpenAI GPT-4o / GPT-4o-mini |
-| AI Images | kie.ai — `google/nano-banana` (Flux) |
-| AI Video | kie.ai — `kling-3.0/video` (Kling AI) |
-| Scraping | Cheerio + native fetch |
-| Protocol | MCP (Model Context Protocol) server |
+| Servidor | Express.js |
+| Copy con IA | OpenAI GPT-4o / GPT-4o-mini |
+| Imágenes con IA | kie.ai — `google/nano-banana` (Flux) |
+| Video con IA | kie.ai — `kling-3.0/video` (Kling AI) |
+| Scraping | Cheerio + fetch nativo |
+| Protocolo | Servidor MCP (Model Context Protocol) |
 | Build | TypeScript compiler (tsc) |
 
 ---
 
-## Project Structure
+## Estructura del Proyecto
 
 ```
 src/
 ├── engine/
-│   ├── brand-analyzer.ts       # Brand card generation + OpenAI copy enrichment
-│   ├── layout-director.ts      # AI layout planner — selects section pipeline
-│   ├── site-builder.ts         # Assembles final HTML from layout plan
-│   ├── image-generator.ts      # AI image generation via nano-banana (kie.ai)
-│   ├── video-generator.ts      # AI video generation via Kling 3.0 (kie.ai)
-│   ├── scraper.ts              # Web scraping (images, colors, copy, meta)
-│   ├── social-scraper.ts       # Social media profile scraping
-│   ├── module-picker.ts        # Cinematic module selector
-│   ├── publisher.ts            # Site file writing + registry management
-│   └── sections/               # 40+ HTML section renderers
+│   ├── brand-analyzer.ts       # Generación de brand card + enriquecimiento de copy con OpenAI
+│   ├── layout-director.ts      # Planificador de layout con IA — selecciona pipeline de secciones
+│   ├── site-builder.ts         # Ensambla el HTML final desde el plan de layout
+│   ├── image-generator.ts      # Generación de imágenes con IA via nano-banana (kie.ai)
+│   ├── video-generator.ts      # Generación de video con IA via Kling 3.0 (kie.ai)
+│   ├── scraper.ts              # Scraping web (imágenes, colores, copy, meta)
+│   ├── social-scraper.ts       # Scraping de perfiles de redes sociales
+│   ├── module-picker.ts        # Selector de módulos cinematográficos
+│   ├── publisher.ts            # Escritura de archivos de sitio + gestión del registro
+│   └── sections/               # Más de 40 renderizadores de secciones HTML
 │       ├── hero-fullbleed.ts
 │       ├── hero-split.ts
 │       ├── hero-editorial.ts
@@ -72,7 +72,7 @@ src/
 │       ├── horizontal-scroll.ts
 │       ├── sticky-stack.ts
 │       ├── zoom-parallax.ts
-│       ├── curtain-reveal.ts   # Video-capable hero
+│       ├── curtain-reveal.ts
 │       ├── text-mask.ts
 │       ├── split-scroll.ts
 │       ├── color-shift.ts
@@ -96,40 +96,40 @@ src/
 │       ├── drag-pan.ts
 │       └── dynamic-island.ts
 ├── web/
-│   └── routes.ts               # Express REST API endpoints
+│   └── routes.ts               # Endpoints de la API REST con Express
 ├── mcp/
-│   ├── server.ts               # MCP server entry
-│   └── tools.ts                # MCP tool definitions
+│   ├── server.ts               # Entrada del servidor MCP
+│   └── tools.ts                # Definiciones de herramientas MCP
 ├── lib/
-│   └── openai.ts               # OpenAI client (miniChat + creativeChat)
+│   └── openai.ts               # Cliente OpenAI (miniChat + creativeChat)
 ├── types/
-│   └── index.ts                # TypeScript interfaces
-└── server.ts                   # Express app entry point
+│   └── index.ts                # Interfaces TypeScript
+└── server.ts                   # Entrada de la aplicación Express
 
 public/
-├── app/                        # Frontend UI
-└── sites/                      # Generated site HTML files
+├── app/                        # UI del frontend (builder, galería, generaciones)
+└── sites/                      # Archivos HTML de sitios generados
 
 data/
 └── generations/
-    ├── images/                 # AI-generated images (nano-banana)
-    └── videos/                 # AI-generated videos (Kling)
+    ├── images/                 # Imágenes generadas por IA (nano-banana)
+    └── videos/                 # Videos generados por IA (Kling)
 ```
 
 ---
 
-## API Endpoints
+## Endpoints de la API
 
-### Site Generation
+### Generación de Sitios
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descripción |
 |---|---|---|
-| `POST` | `/api/sites` | Generate a complete site |
-| `GET` | `/api/sites` | List all generated sites |
-| `GET` | `/api/sites/:slug` | Get site metadata |
-| `DELETE` | `/api/sites/:slug` | Delete a site |
+| `POST` | `/api/sites` | Generar un sitio completo |
+| `GET` | `/api/sites` | Listar todos los sitios generados |
+| `GET` | `/api/sites/:slug` | Obtener metadata de un sitio |
+| `DELETE` | `/api/sites/:slug` | Eliminar un sitio |
 
-**POST `/api/sites` body:**
+**Body de POST `/api/sites`:**
 ```json
 {
   "businessName": "Restaurante El Rincón",
@@ -147,14 +147,14 @@ data/
 }
 ```
 
-### Image Generation
+### Generación de Imágenes
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descripción |
 |---|---|---|
-| `POST` | `/api/generate-images` | Generate hero/gallery images via nano-banana |
-| `GET` | `/api/generations/images` | List saved generated images |
+| `POST` | `/api/generate-images` | Generar imágenes hero/galería via nano-banana |
+| `GET` | `/api/generations/images` | Listar imágenes generadas guardadas |
 
-**POST `/api/generate-images` body:**
+**Body de POST `/api/generate-images`:**
 ```json
 {
   "businessName": "Restaurante El Rincón",
@@ -165,14 +165,14 @@ data/
 }
 ```
 
-### Video Generation
+### Generación de Video
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descripción |
 |---|---|---|
-| `POST` | `/api/generate-video` | Submit image-to-video task (Kling 3.0) |
-| `GET` | `/api/video-status/:taskId` | Poll video task status |
+| `POST` | `/api/generate-video` | Enviar tarea de imagen-a-video (Kling 3.0) |
+| `GET` | `/api/video-status/:taskId` | Consultar estado de la tarea de video |
 
-**POST `/api/generate-video` body:**
+**Body de POST `/api/generate-video`:**
 ```json
 {
   "imageUrl": "/generations/images/abc.jpg",
@@ -184,80 +184,80 @@ data/
 }
 ```
 
-### Upload
+### Subida de Archivos
 
-| Method | Endpoint | Description |
+| Método | Endpoint | Descripción |
 |---|---|---|
-| `POST` | `/api/upload-image` | Upload user image |
-| `POST` | `/api/upload-video` | Upload user video |
+| `POST` | `/api/upload-image` | Subir imagen del usuario |
+| `POST` | `/api/upload-video` | Subir video del usuario |
 
 ---
 
-## Business Types
+## Tipos de Negocio
 
 `saas-tech` · `agency-studio` · `ecommerce` · `restaurant-food` · `portfolio-creative` · `luxury-jewelry` · `real-estate` · `fitness-health` · `auto-detailing` · `professional-services` · `music-events` · `education` · `beauty-salon` · `legal-finance` · `construction` · `pet-services` · `nonprofit` · `photography` · `travel-tourism` · `gaming-esports` · `other`
 
 ---
 
-## Environment Variables
+## Variables de Entorno
 
-Create a `.env` file in the project root:
+Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-OPENAI_API_KEY=sk-...         # GPT-4o for copy + prompt generation
-KIEAI_API_KEY=...              # kie.ai for image (nano-banana) and video (Kling) generation
-PORT=3000                      # Optional, defaults to 3000
+OPENAI_API_KEY=sk-...         # GPT-4o para copy y generación de prompts
+KIEAI_API_KEY=...              # kie.ai para imágenes (nano-banana) y video (Kling)
+PORT=3000                      # Opcional, por defecto 3000
 ```
 
-Both keys are optional — the builder falls back to deterministic templates if AI APIs are unavailable.
+Ambas claves son opcionales — el builder usa plantillas determinísticas si las APIs de IA no están disponibles.
 
 ---
 
-## Setup & Run
+## Instalación y Ejecución
 
 ```bash
-# Install dependencies
+# Instalar dependencias
 npm install
 
-# Build TypeScript
+# Compilar TypeScript
 npm run build
 
-# Development (hot reload)
+# Desarrollo (hot reload)
 npm run dev
 
-# Production
+# Producción
 npm start
 
-# MCP server
+# Servidor MCP
 npm run mcp
 ```
 
 ---
 
-## Key Features & Design Decisions
+## Decisiones Técnicas Clave
 
-### AI Prompt Generation for Images & Videos
+### Generación de Prompts con IA para Imágenes y Videos
 
-Rather than using fixed templates, when OpenAI is available the system calls `miniChat` (GPT-4o-mini) to generate rich, contextual prompts specific to the business name, industry, mood, and color palette before sending to kie.ai. If OpenAI is unavailable, a curated library of industry-specific seed prompts is used with random selection to ensure variety.
+En lugar de plantillas fijas, cuando OpenAI está disponible el sistema llama a `miniChat` (GPT-4o-mini) para generar prompts ricos y contextuales específicos al nombre del negocio, industria, mood y paleta de colores antes de enviar a kie.ai. Si OpenAI no está disponible, se usa una librería curada de prompts seed por industria con selección aleatoria para garantizar variedad.
 
-### Video-Capable Hero Enforcement
+### Forzado de Hero Compatible con Video
 
-When a user provides a hero video, the layout director is overridden post-selection to ensure the hero section type is always one that supports video rendering (`hero-fullbleed`, `hero-split`, `mesh-hero`, `typewriter-hero`). This prevents silent video drops where other hero types (e.g. `curtain-reveal`, `text-mask`) would ignore the video asset.
+Cuando el usuario proporciona un video hero, el director de layout es sobreescrito post-selección para garantizar que el tipo de sección hero siempre sea uno que soporte renderizado de video (`hero-fullbleed`, `hero-split`, `mesh-hero`, `typewriter-hero`). Esto previene que el video sea ignorado silenciosamente por otros tipos de hero que no lo soportan.
 
-### Image Rendering — Natural Aspect Ratios
+### Renderizado de Imágenes con Proporciones Naturales
 
-Gallery, masonry, and carousel sections render images at their natural aspect ratios using `height:auto` and CSS `columns` masonry layout instead of fixed `grid-auto-rows` with forced aspect ratios. This prevents distortion of portrait, square, and tall images. `object-position:center top` ensures subjects (faces, food, products) are kept in frame.
+Las secciones de galería, masonry y carrusel renderizan imágenes en sus proporciones naturales usando `height:auto` y layout CSS `columns` para masonry real, en lugar de `grid-auto-rows` fijo con proporciones forzadas. Esto previene la distorsión de imágenes verticales, cuadradas y altas. `object-position:center top` asegura que los sujetos (rostros, comida, productos) se mantengan visibles en el encuadre.
 
-### Social Scraping
+### Scraping Social
 
-The scraper extracts profile name, bio, follower count, images, colors, headlines, links, and contact info from Instagram, Facebook, LinkedIn, TikTok, Twitter, and arbitrary websites. Scraped brand colors are used to override the accent color in the generated palette.
+El scraper extrae nombre de perfil, bio, cantidad de seguidores, imágenes, colores, titulares, enlaces e información de contacto de Instagram, Facebook, LinkedIn, TikTok, Twitter y sitios web arbitrarios. Los colores de marca scrapeados se usan para sobreescribir el color de acento en la paleta generada.
 
-### MCP Integration
+### Integración MCP
 
-The builder exposes a full Model Context Protocol (MCP) server, allowing Claude and other AI assistants to generate sites, images, and videos as tools within agentic workflows.
+El builder expone un servidor completo de Model Context Protocol (MCP), permitiendo que Claude y otros asistentes de IA generen sitios, imágenes y videos como herramientas dentro de flujos de trabajo agénticos.
 
 ---
 
-## License
+## Licencia
 
-Private — SaraviamTech © 2025
+Privado — SaraviamTech © 2025
