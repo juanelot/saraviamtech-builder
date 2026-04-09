@@ -445,6 +445,117 @@ El builder expone un servidor completo de Model Context Protocol (MCP), permitie
 
 ---
 
+## Integración MCP
+
+El servidor MCP permite que Claude u otros LLMs consuman el builder como herramientas nativas dentro de sus flujos agénticos.
+
+### Herramientas disponibles
+
+| Herramienta | Descripción |
+|---|---|
+| `list_modules` | Lista todos los módulos de animación disponibles |
+| `analyze_brand` | Analiza un negocio y genera brand card completa |
+| `recommend_modules` | Sugiere módulos cinematográficos por industria |
+| `create_site` | Genera un sitio HTML completo en un solo paso |
+| `list_sites` | Lista todos los sitios generados |
+| `get_site` | Obtiene detalles y HTML de un sitio por slug |
+| `delete_site` | Elimina un sitio generado |
+| `generate_images` | Genera imágenes hero/galería via nano-banana (Flux) |
+| `generate_video` | Envía tarea de imagen-a-video via Kling 3.0 |
+| `check_video_status` | Consulta el estado de una tarea de video por taskId |
+| `scrape_brand` | Raspa datos de marca desde una URL o red social |
+| `list_generations` | Lista imágenes y videos generados almacenados |
+
+### Autenticación
+
+El servidor MCP soporta autenticación opcional por token Bearer. Agrega `MCP_TOKEN` a tu `.env`:
+
+```env
+MCP_TOKEN=tu-token-secreto-aqui
+```
+
+- Si `MCP_TOKEN` **está configurado**: todos los clientes deben enviar `Authorization: Bearer tu-token-secreto-aqui`
+- Si `MCP_TOKEN` **no está configurado**: el servidor corre sin autenticación (recomendado solo en entornos locales o de confianza)
+
+### Iniciar el servidor MCP
+
+```bash
+# Desarrollo
+npm run mcp
+
+# Producción (compilado)
+node dist/mcp/server.js
+```
+
+### Configurar en Claude Desktop
+
+Edita el archivo de configuración de Claude Desktop:
+
+**Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "saraviamtech-builder": {
+      "command": "node",
+      "args": ["/ruta/al/proyecto/dist/mcp/server.js"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "KIEAI_API_KEY": "...",
+        "BASE_URL": "http://localhost:3000",
+        "MCP_TOKEN": "tu-token-secreto-aqui"
+      }
+    }
+  }
+}
+```
+
+O usando `tsx` en desarrollo (sin compilar):
+
+```json
+{
+  "mcpServers": {
+    "saraviamtech-builder": {
+      "command": "npx",
+      "args": ["tsx", "/ruta/al/proyecto/src/mcp/server.ts"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "KIEAI_API_KEY": "...",
+        "BASE_URL": "http://localhost:3000",
+        "MCP_TOKEN": "tu-token-secreto-aqui"
+      }
+    }
+  }
+}
+```
+
+### Configurar en Claude Code (CLI)
+
+```bash
+claude mcp add saraviamtech-builder \
+  --command "node /ruta/al/proyecto/dist/mcp/server.js" \
+  --env OPENAI_API_KEY=sk-... \
+  --env KIEAI_API_KEY=... \
+  --env BASE_URL=http://localhost:3000 \
+  --env MCP_TOKEN=tu-token-secreto-aqui
+```
+
+### Flujo de trabajo típico con Claude
+
+Una vez integrado, Claude puede ejecutar un flujo completo:
+
+```
+1. scrape_brand(url) → extrae colores, bio, imágenes
+2. generate_images(businessName, businessType, mood) → genera imágenes hero
+3. generate_video(imageUrl, businessName, ...) → inicia video (retorna taskId)
+4. check_video_status(taskId) → espera hasta "completed"
+5. create_site(... heroImageUrl, heroVideoUrl) → genera el sitio final
+6. get_site(slug) → devuelve la URL pública del sitio
+```
+
+---
+
 ## Licencia
 
 Privado — SaraviamTech © 2025
