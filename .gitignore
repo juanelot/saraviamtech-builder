@@ -1,0 +1,13 @@
+node_modules/
+.env
+data/generations/
+data/builds/
+data/uploads/
+data/project.json
+data/sites-registry.json
+*.log
+dist/
+public/sites/
+.claude/
+.agents/
+skills-lock.json
