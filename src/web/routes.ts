@@ -478,6 +478,93 @@ apiRouter.get('/uploads/videos', (_req, res) => {
   }
 });
 
+// ── Settings / env vars ───────────────────────────────────────────────────────
+// Keys allowed to be read/written via the UI (never expose arbitrary env)
+const ALLOWED_ENV_KEYS = ['OPENAI_API_KEY', 'KIEAI_API_KEY', 'MCP_TOKEN', 'BASE_URL', 'PORT'] as const;
+type AllowedKey = typeof ALLOWED_ENV_KEYS[number];
+
+const ENV_FILE = path.join(ROOT, '.env');
+
+function parseEnvFile(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    // Strip surrounding quotes
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+function serializeEnvFile(vars: Record<string, string>): string {
+  return Object.entries(vars)
+    .map(([k, v]) => `${k}=${v.includes(' ') || v.includes('#') ? `"${v}"` : v}`)
+    .join('\n') + '\n';
+}
+
+// GET /api/settings/env — return current values of allowed env keys (masked secrets)
+apiRouter.get('/settings/env', (_req, res) => {
+  const result: Record<string, string> = {};
+  let fileVars: Record<string, string> = {};
+
+  try {
+    if (fs.existsSync(ENV_FILE)) {
+      fileVars = parseEnvFile(fs.readFileSync(ENV_FILE, 'utf8'));
+    }
+  } catch { /* ignore */ }
+
+  for (const key of ALLOWED_ENV_KEYS) {
+    // Prefer file value so the UI shows what's actually stored
+    result[key] = fileVars[key] ?? process.env[key] ?? '';
+  }
+
+  return res.json({ success: true, data: result });
+});
+
+// PATCH /api/settings/env — update one or more env vars in the .env file
+apiRouter.patch('/settings/env', (req, res) => {
+  const updates = req.body as Partial<Record<AllowedKey, string>>;
+  if (!updates || typeof updates !== 'object') {
+    return res.status(400).json({ success: false, error: 'Invalid body' });
+  }
+
+  // Only allow whitelisted keys
+  for (const key of Object.keys(updates)) {
+    if (!(ALLOWED_ENV_KEYS as readonly string[]).includes(key)) {
+      return res.status(400).json({ success: false, error: `Key "${key}" is not allowed` });
+    }
+  }
+
+  try {
+    let fileVars: Record<string, string> = {};
+    if (fs.existsSync(ENV_FILE)) {
+      fileVars = parseEnvFile(fs.readFileSync(ENV_FILE, 'utf8'));
+    }
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === '' || value === undefined) {
+        delete fileVars[key]; // remove empty entries
+      } else {
+        fileVars[key] = value as string;
+        // Also update the live process.env so capabilities endpoint reflects immediately
+        process.env[key] = value as string;
+      }
+    }
+
+    fs.writeFileSync(ENV_FILE, serializeEnvFile(fileVars), 'utf8');
+    return res.json({ success: true, message: 'Saved. Restart the server to apply all changes.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // DELETE /api/uploads/:type/:filename - delete a user upload
 apiRouter.delete('/uploads/:type/:filename', (req, res) => {
   try {

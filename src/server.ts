@@ -30,11 +30,12 @@ app.use('/', express.static(join(__dirname, '../public/app')));
 
 app.listen(PORT, () => {
   console.log(`SaraviamTech Builder running at http://localhost:${PORT}`);
-  console.log(`  Dashboard:   http://localhost:${PORT}/`);
-  console.log(`  Builder:     http://localhost:${PORT}/builder.html`);
-  console.log(`  Gallery:     http://localhost:${PORT}/gallery.html`);
-  console.log(`  Generations: http://localhost:${PORT}/generations.html`);
-  console.log(`  API:         http://localhost:${PORT}/api`);
+  console.log(`  Dashboard:      http://localhost:${PORT}/`);
+  console.log(`  Builder:        http://localhost:${PORT}/builder.html`);
+  console.log(`  Gallery:        http://localhost:${PORT}/gallery.html`);
+  console.log(`  Generations:    http://localhost:${PORT}/generations.html`);
+  console.log(`  Settings:       http://localhost:${PORT}/settings.html`);
+  console.log(`  API:            http://localhost:${PORT}/api`);
 });
 
 export default app;

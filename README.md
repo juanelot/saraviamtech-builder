@@ -206,10 +206,44 @@ Crea un archivo `.env` en la raíz del proyecto:
 ```env
 OPENAI_API_KEY=sk-...         # GPT-4o para copy y generación de prompts
 KIEAI_API_KEY=...              # kie.ai para imágenes (nano-banana) y video (Kling)
+BASE_URL=https://tudominio.com # URL pública del servidor (requerida para videos)
 PORT=3000                      # Opcional, por defecto 3000
+MCP_TOKEN=tu-token-secreto    # Opcional — protege el servidor MCP con Bearer token
 ```
 
-Ambas claves son opcionales — el builder usa plantillas determinísticas si las APIs de IA no están disponibles.
+Ambas claves de API son opcionales — el builder usa plantillas determinísticas si las APIs de IA no están disponibles.
+
+> **Página de Configuración:** Puedes gestionar todas las variables de entorno directamente desde la interfaz web en `/settings.html` sin necesidad de editar archivos manualmente.
+
+---
+
+## Generación de Video en Local (ngrok)
+
+La generación de video usa **kie.ai / Kling 3.0**, que necesita descargar la imagen fuente y entregar el video terminado a través de una **URL pública accesible desde internet**. Si corres el servidor en `localhost`, kie.ai no puede alcanzarlo.
+
+### Solución: ngrok
+
+```bash
+# 1. Instalar ngrok
+npm install -g ngrok
+# o descarga el binario desde https://ngrok.com/download
+
+# 2. En una terminal separada, expón el puerto 3000
+ngrok http 3000
+
+# Ngrok mostrará algo como:
+# Forwarding  https://abc123.ngrok-free.app -> http://localhost:3000
+
+# 3. Copia la URL HTTPS y configúrala en tu .env
+BASE_URL=https://abc123.ngrok-free.app
+
+# 4. Reinicia el servidor
+npm run build && node dist/server.js
+```
+
+También puedes configurar `BASE_URL` desde la página de Configuración del dashboard sin reiniciar.
+
+> **En VPS / producción** con dominio propio no necesitas ngrok. Configura `BASE_URL=https://tudominio.com` y listo.
 
 ---
 
