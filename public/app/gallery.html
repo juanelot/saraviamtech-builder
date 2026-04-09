@@ -958,6 +958,9 @@
                 <button class="btn-action btn-action-ghost" onclick="copyUrl('${site.url}', this)">
                   ${t('card.copy')}
                 </button>
+                <button class="btn-action btn-action-ghost" onclick="exportSite('${site.slug}', this)" title="Exportar ZIP con assets">
+                  ↓ ZIP
+                </button>
                 <button class="btn-action btn-action-danger" onclick="deleteSite('${site.slug}', this)" style="flex:0;padding:0.575rem 0.75rem;">
                   ✕
                 </button>
@@ -976,6 +979,29 @@
         setTimeout(() => btn.textContent = orig, 1500);
       } catch {
         prompt('URL:', url);
+      }
+    }
+
+    async function exportSite(slug, btn) {
+      const orig = btn.textContent;
+      btn.textContent = '…';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/sites/${slug}/export`);
+        if (!res.ok) throw new Error(await res.text());
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        btn.textContent = '✓ ZIP';
+        setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+      } catch (err) {
+        alert('Error al exportar: ' + err.message);
+        btn.textContent = orig;
+        btn.disabled = false;
       }
     }
 

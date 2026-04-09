@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import archiver from 'archiver';
 import { fileURLToPath } from 'node:url';
 import multer from 'multer';
 import type { CreateSiteRequest, ApiResponse, GeneratedSite } from '../types/index.js';
@@ -562,6 +563,106 @@ apiRouter.patch('/settings/env', (req, res) => {
     return res.json({ success: true, message: 'Saved. Restart the server to apply all changes.' });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/sites/:slug/export - export site as ZIP with assets
+apiRouter.get('/sites/:slug/export', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    // Security: only allow simple slugs
+    if (!/^[\w\-]+$/.test(slug)) {
+      return res.status(400).json({ success: false, error: 'Slug inválido' });
+    }
+
+    const siteDir = path.join(ROOT, 'public/sites', slug);
+    const htmlPath = path.join(siteDir, 'index.html');
+
+    if (!fs.existsSync(htmlPath)) {
+      return res.status(404).json({ success: false, error: 'Sitio no encontrado' });
+    }
+
+    let html = fs.readFileSync(htmlPath, 'utf8');
+
+    // Find all local asset references: /generations/... and /uploads/...
+    const assetPattern = /(?:src|href)=["'](\/(?:generations|uploads)\/[^"']+)["']/g;
+    const cssUrlPattern = /url\(["']?(\/(?:generations|uploads)\/[^"')]+)["']?\)/g;
+
+    const assetMap = new Map<string, string>(); // originalPath -> localPath in zip
+
+    const collectAsset = (originalUrl: string) => {
+      if (assetMap.has(originalUrl)) return;
+      const parts = originalUrl.split('/').filter(Boolean); // ['generations','images','file.jpg']
+      const localPath = parts.slice(1).join('/'); // 'images/file.jpg' or 'videos/file.mp4'
+      assetMap.set(originalUrl, localPath);
+    };
+
+    let match: RegExpExecArray | null;
+    while ((match = assetPattern.exec(html)) !== null) collectAsset(match[1]!);
+    while ((match = cssUrlPattern.exec(html)) !== null) collectAsset(match[1]!);
+
+    // Replace paths in HTML: /generations/images/x.jpg → images/x.jpg
+    html = html.replace(assetPattern, (full, url) => {
+      const local = assetMap.get(url);
+      return local ? full.replace(url, local) : full;
+    });
+    html = html.replace(cssUrlPattern, (full, url) => {
+      const local = assetMap.get(url);
+      return local ? full.replace(url, local) : full;
+    });
+
+    // Stream ZIP response
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.pipe(res);
+
+    // Add modified HTML
+    archive.append(html, { name: 'index.html' });
+
+    // Add each referenced asset file
+    for (const [originalUrl, localPath] of assetMap.entries()) {
+      const parts = originalUrl.split('/').filter(Boolean);
+      // parts[0] = 'generations' or 'uploads', parts[1] = 'images'|'videos', parts[2] = filename
+      const dataPath = path.join(ROOT, 'data', ...parts);
+      if (fs.existsSync(dataPath)) {
+        archive.file(dataPath, { name: localPath });
+      }
+    }
+
+    // Add a simple README inside the ZIP
+    const readmeContent = [
+      `# ${slug}`,
+      '',
+      'Sitio exportado desde SaraviamTech Builder.',
+      '',
+      '## Estructura',
+      '```',
+      'index.html     ← Página principal',
+      'images/        ← Imágenes generadas por IA',
+      'videos/        ← Videos generados por IA',
+      'uploads/       ← Assets subidos por el usuario',
+      '```',
+      '',
+      '## Cómo usar',
+      '- Abre `index.html` en tu navegador para previsualizar.',
+      '- Sube todos los archivos a tu hosting manteniendo la misma estructura.',
+      '- Edita `index.html` con cualquier editor de código (VS Code, etc.).',
+      '',
+      '## Fuentes',
+      'Las fuentes se cargan desde Google Fonts (requiere conexión a internet).',
+      'Para uso offline, descarga las fuentes e impórtalas manualmente en el CSS.',
+    ].join('\n');
+
+    archive.append(readmeContent, { name: 'README.md' });
+
+    await archive.finalize();
+  } catch (err: any) {
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 });
 
