@@ -154,7 +154,7 @@ apiRouter.delete('/sites/:slug', (req, res) => {
   return res.json({ success: true } as ApiResponse<null>);
 });
 
-// PATCH /api/sites/:slug/colors — update CSS color variables in-place (no re-render, design unchanged)
+// PATCH /api/sites/:slug/colors — update palette and re-render site HTML
 apiRouter.patch('/sites/:slug/colors', async (req, res) => {
   try {
     const registry = loadRegistry();
@@ -167,34 +167,24 @@ apiRouter.patch('/sites/:slug/colors', async (req, res) => {
     }
 
     const site = registry.sites[idx]!;
-    const siteDir = path.join(ROOT, 'public/sites', site.slug);
-    const htmlPath = path.join(siteDir, 'index.html');
+    const updatedBrandCard = {
+      ...site.brandCard,
+      colors: { bg, surface, accent, text, muted },
+    };
 
-    if (!fs.existsSync(htmlPath)) {
-      return res.status(404).json({ success: false, error: 'HTML del sitio no encontrado en disco' } as ApiResponse<null>);
-    }
+    const html = await buildSite(
+      updatedBrandCard,
+      site.modules,
+      site.heroImageUrl,
+      site.heroVideoUrl,
+      site.galleryImageUrls,
+      undefined,
+      true, // noAI — just re-render with new colors
+    );
 
-    // Read existing HTML and patch only the CSS variables — design stays intact
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    const colorMap: Record<string, string> = { bg, surface, accent, text, muted };
-    for (const [key, val] of Object.entries(colorMap)) {
-      // Replace "--bg: #xxxxxx" (any existing hex or value after the colon)
-      html = html.replace(
-        new RegExp(`(--${key}:\\s*)[^;]+`, 'g'),
-        `$1${val}`,
-      );
-    }
-    fs.writeFileSync(htmlPath, html, 'utf8');
-
-    // Update registry with new colors
-    const updatedBrandCard = { ...site.brandCard, colors: { bg, surface, accent, text, muted } };
     const updatedSite: GeneratedSite = { ...site, brandCard: updatedBrandCard, html };
-    registry.sites[idx] = updatedSite;
-    saveRegistry(registry);
-
-    const baseUrl = getBaseUrl(req);
-    const siteWithUrl = { ...updatedSite, url: `${baseUrl}/sites/${site.slug}/` };
-    return res.json({ success: true, data: siteWithUrl } as ApiResponse<GeneratedSite>);
+    const published = publishSite(updatedSite, getBaseUrl(req));
+    return res.json({ success: true, data: published } as ApiResponse<GeneratedSite>);
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
   }

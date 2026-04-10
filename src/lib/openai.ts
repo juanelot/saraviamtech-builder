@@ -35,7 +35,7 @@ export async function miniChat(
 export async function creativeChat(
   systemPrompt: string,
   userPrompt: string,
-  seed?: number,
+  _seed?: number, // kept for API compat but NOT passed to OpenAI — seed in prompt text is enough
 ): Promise<string> {
   const client = getClient();
   const res = await client.chat.completions.create({
@@ -45,7 +45,6 @@ export async function creativeChat(
       { role: 'user', content: userPrompt },
     ],
     temperature: 0.9,
-    ...(seed !== undefined ? { seed } : {}),
   });
   return res.choices[0]?.message?.content ?? '';
 }
