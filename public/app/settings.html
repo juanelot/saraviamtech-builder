@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Configuración</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -198,6 +199,23 @@
     </div>
   </div>
 
+  <!-- Google / Gemini -->
+  <div class="section">
+    <div class="section-title">Google AI (Fallback)</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🔮</div>
+        <div class="card-header-text">
+          <h3>Google Gemini</h3>
+          <p>Alternativa a OpenAI. Se usa como fallback cuando OpenAI no está disponible. Obtén tu clave gratis en <code style="font-size:0.75rem;background:var(--surface2);padding:0.1rem 0.3rem;border-radius:0.25rem;color:var(--muted2);">aistudio.google.com</code>.</p>
+        </div>
+      </div>
+      <div class="env-list" id="google-list">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- API Keys -->
   <div class="section">
     <div class="section-title">Claves API</div>
@@ -281,6 +299,15 @@
   // ── Config definitions ────────────────────────────────────────────────────────
   const ENV_DEFS = [
     {
+      id: 'GOOGLE_API_KEY',
+      label: 'Google API Key (Gemini)',
+      placeholder: 'AIzaSy...',
+      required: false,
+      secret: true,
+      desc: 'Clave para Gemini (Google AI). Se usa como fallback cuando OpenAI no está configurado o falla. Obtén tu clave en Google AI Studio (aistudio.google.com).',
+      group: 'google',
+    },
+    {
       id: 'OPENAI_API_KEY',
       label: 'OpenAI API Key',
       placeholder: 'sk-proj-...',
@@ -345,6 +372,7 @@
 
   // ── Render env rows ───────────────────────────────────────────────────────────
   function renderEnvList() {
+    renderGroup('google', 'google-list');
     renderGroup('api', 'env-list');
     renderGroup('mcp', 'mcp-list');
     renderGroup('url', 'url-list');
@@ -475,6 +503,13 @@
           <div>
             <div class="cap-label">Generación de video</div>
             <div class="cap-status ${caps.videoGen ? 'active' : 'inactive'}">${caps.videoGen ? '✓ Activo (Kling 3.0)' : '✗ Sin configurar'}</div>
+          </div>
+        </div>
+        <div class="cap-item">
+          <span class="cap-icon">🔮</span>
+          <div>
+            <div class="cap-label">Gemini (Google AI)</div>
+            <div class="cap-status ${caps.google ? 'active' : 'inactive'}">${caps.google ? '✓ Activo (fallback)' : '✗ Sin configurar'}</div>
           </div>
         </div>
         <div class="cap-item">

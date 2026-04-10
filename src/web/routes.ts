@@ -306,6 +306,7 @@ apiRouter.get('/capabilities', (_req, res) => {
     success: true,
     data: {
       openai: hasOpenAI(),
+      google: !!process.env.GOOGLE_API_KEY,
       imageGen: hasImageGen(),
       videoGen: hasVideoGen(),
     },
@@ -481,7 +482,7 @@ apiRouter.get('/uploads/videos', (_req, res) => {
 
 // ── Settings / env vars ───────────────────────────────────────────────────────
 // Keys allowed to be read/written via the UI (never expose arbitrary env)
-const ALLOWED_ENV_KEYS = ['OPENAI_API_KEY', 'KIEAI_API_KEY', 'MCP_TOKEN', 'BASE_URL', 'PORT'] as const;
+const ALLOWED_ENV_KEYS = ['OPENAI_API_KEY', 'KIEAI_API_KEY', 'GOOGLE_API_KEY', 'MCP_TOKEN', 'BASE_URL', 'PORT'] as const;
 type AllowedKey = typeof ALLOWED_ENV_KEYS[number];
 
 const ENV_FILE = path.join(ROOT, '.env');
