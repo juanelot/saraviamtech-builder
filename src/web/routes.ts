@@ -3,13 +3,14 @@ import { randomUUID } from 'crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import archiver from 'archiver';
+import unzipper from 'unzipper';
 import { fileURLToPath } from 'node:url';
 import multer from 'multer';
 import type { CreateSiteRequest, ApiResponse, GeneratedSite } from '../types/index.js';
 import { analyzeBrand } from '../engine/brand-analyzer.js';
 import { pickModules, MODULES } from '../engine/module-picker.js';
 import { buildSite } from '../engine/site-builder.js';
-import { publishSite, loadRegistry, deleteSite } from '../engine/publisher.js';
+import { publishSite, loadRegistry, saveRegistry, deleteSite } from '../engine/publisher.js';
 import { scrapeUrl } from '../engine/scraper.js';
 import { scrapeSocialProfile, mergeSocialSources } from '../engine/social-scraper.js';
 import { hasOpenAI, miniChat, creativeChat, parseJSON } from '../lib/openai.js';
@@ -48,6 +49,19 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Tipo de archivo no permitido. Use jpg, png, webp, mp4, webm.'));
+    }
+  },
+});
+
+// Multer for ZIP imports — memory storage, single file
+const uploadZip = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB max
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/zip' || file.originalname.endsWith('.zip')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se aceptan archivos .zip'));
     }
   },
 });
@@ -140,7 +154,7 @@ apiRouter.delete('/sites/:slug', (req, res) => {
   return res.json({ success: true } as ApiResponse<null>);
 });
 
-// PATCH /api/sites/:slug/colors — update palette and re-render site HTML
+// PATCH /api/sites/:slug/colors — update CSS color variables in-place (no re-render, design unchanged)
 apiRouter.patch('/sites/:slug/colors', async (req, res) => {
   try {
     const registry = loadRegistry();
@@ -153,24 +167,34 @@ apiRouter.patch('/sites/:slug/colors', async (req, res) => {
     }
 
     const site = registry.sites[idx]!;
-    const updatedBrandCard = {
-      ...site.brandCard,
-      colors: { bg, surface, accent, text, muted },
-    };
+    const siteDir = path.join(ROOT, 'public/sites', site.slug);
+    const htmlPath = path.join(siteDir, 'index.html');
 
-    const html = await buildSite(
-      updatedBrandCard,
-      site.modules,
-      site.heroImageUrl,
-      site.heroVideoUrl,
-      site.galleryImageUrls,
-      undefined,
-      true, // noAI — just re-render with new colors
-    );
+    if (!fs.existsSync(htmlPath)) {
+      return res.status(404).json({ success: false, error: 'HTML del sitio no encontrado en disco' } as ApiResponse<null>);
+    }
 
+    // Read existing HTML and patch only the CSS variables — design stays intact
+    let html = fs.readFileSync(htmlPath, 'utf8');
+    const colorMap: Record<string, string> = { bg, surface, accent, text, muted };
+    for (const [key, val] of Object.entries(colorMap)) {
+      // Replace "--bg: #xxxxxx" (any existing hex or value after the colon)
+      html = html.replace(
+        new RegExp(`(--${key}:\\s*)[^;]+`, 'g'),
+        `$1${val}`,
+      );
+    }
+    fs.writeFileSync(htmlPath, html, 'utf8');
+
+    // Update registry with new colors
+    const updatedBrandCard = { ...site.brandCard, colors: { bg, surface, accent, text, muted } };
     const updatedSite: GeneratedSite = { ...site, brandCard: updatedBrandCard, html };
-    const published = publishSite(updatedSite, getBaseUrl(req));
-    return res.json({ success: true, data: published } as ApiResponse<GeneratedSite>);
+    registry.sites[idx] = updatedSite;
+    saveRegistry(registry);
+
+    const baseUrl = getBaseUrl(req);
+    const siteWithUrl = { ...updatedSite, url: `${baseUrl}/sites/${site.slug}/` };
+    return res.json({ success: true, data: siteWithUrl } as ApiResponse<GeneratedSite>);
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
   }
@@ -674,6 +698,13 @@ apiRouter.get('/sites/:slug/export', async (req, res) => {
       }
     }
 
+    // Add site metadata for import restoration
+    const siteRegistry = loadRegistry();
+    const siteEntry = siteRegistry.sites.find(s => s.slug === slug);
+    if (siteEntry) {
+      archive.append(JSON.stringify(siteEntry, null, 2), { name: 'site.json' });
+    }
+
     // Add a simple README inside the ZIP
     const readmeContent = [
       `# ${slug}`,
@@ -728,5 +759,251 @@ apiRouter.delete('/uploads/:type/:filename', (req, res) => {
     return res.json({ success: true });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/sites/import — restore a site from an exported ZIP backup
+apiRouter.post('/sites/import', uploadZip.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se recibió ningún archivo ZIP' } as ApiResponse<null>);
+    }
+
+    const zipBuffer = req.file.buffer;
+    const directory = await unzipper.Open.buffer(zipBuffer);
+
+    // Extract site.json (required for metadata restoration)
+    const siteJsonFile = directory.files.find((f: any) => f.path === 'site.json');
+    if (!siteJsonFile) {
+      return res.status(400).json({ success: false, error: 'ZIP inválido: falta site.json. Solo se pueden importar backups exportados desde este builder.' } as ApiResponse<null>);
+    }
+    const siteJsonContent = await siteJsonFile.buffer();
+    const siteEntry: GeneratedSite = JSON.parse(siteJsonContent.toString('utf8'));
+    const slug = siteEntry.slug;
+
+    if (!slug || !/^[\w\-]+$/.test(slug)) {
+      return res.status(400).json({ success: false, error: 'Slug inválido en site.json' } as ApiResponse<null>);
+    }
+
+    // Extract index.html (required)
+    const htmlFile = directory.files.find((f: any) => f.path === 'index.html');
+    if (!htmlFile) {
+      return res.status(400).json({ success: false, error: 'ZIP inválido: falta index.html' } as ApiResponse<null>);
+    }
+    let html = (await htmlFile.buffer()).toString('utf8');
+
+    // Determine which filenames originally came from /generations/ vs /uploads/
+    // using the URLs stored in site.json metadata
+    const generationsFilenames = new Set<string>();
+    const uploadsFilenames = new Set<string>();
+    const allSiteUrls = [
+      siteEntry.heroImageUrl,
+      siteEntry.heroVideoUrl,
+      ...(siteEntry.galleryImageUrls ?? []),
+    ].filter(Boolean) as string[];
+    for (const u of allSiteUrls) {
+      const fname = path.basename(u);
+      if (u.startsWith('/generations/')) generationsFilenames.add(fname);
+      else if (u.startsWith('/uploads/')) uploadsFilenames.add(fname);
+    }
+
+    // Restore asset files from ZIP → correct data/ subfolder
+    const assetRestoreMap = new Map<string, string>(); // zip relative path → public URL
+
+    for (const file of directory.files as any[]) {
+      const p: string = file.path;
+      const isImage = p.startsWith('images/') && !p.endsWith('/');
+      const isVideo = p.startsWith('videos/') && !p.endsWith('/');
+      if (!isImage && !isVideo) continue;
+
+      const filename = path.basename(p);
+      if (!/^[\w\-\.]+$/.test(filename)) continue; // security
+
+      // Restore to generations/ if that's where it came from, otherwise uploads/
+      const fromGenerations = generationsFilenames.has(filename);
+      const destDir = fromGenerations
+        ? (isVideo ? VIDEOS_DIR : IMAGES_DIR)
+        : (isVideo ? UPLOAD_VIDEOS_DIR : UPLOAD_IMAGES_DIR);
+      const urlPrefix = fromGenerations
+        ? (isVideo ? '/generations/videos' : '/generations/images')
+        : (isVideo ? '/uploads/videos' : '/uploads/images');
+
+      const destPath = path.join(destDir, filename);
+      const publicUrl = urlPrefix + '/' + filename;
+
+      // Only write if not already present — no duplicates
+      if (!fs.existsSync(destPath)) {
+        const buf = await file.buffer();
+        fs.mkdirSync(destDir, { recursive: true });
+        fs.writeFileSync(destPath, buf);
+      }
+
+      assetRestoreMap.set(p, publicUrl);
+    }
+
+    // Rewrite relative asset paths in HTML back to absolute server paths
+    for (const [zipPath, publicUrl] of assetRestoreMap.entries()) {
+      const escaped = zipPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp('(src|href)=["\']' + escaped + '["\']', 'g'), '$1="' + publicUrl + '"');
+      html = html.replace(new RegExp('url\\(["\']?' + escaped + '["\']?\\)', 'g'), 'url("' + publicUrl + '")');
+    }
+
+    // Write restored HTML to disk
+    const siteDir = path.join(ROOT, 'public/sites', slug);
+    fs.mkdirSync(siteDir, { recursive: true });
+    fs.writeFileSync(path.join(siteDir, 'index.html'), html, 'utf8');
+
+    // Upsert into registry
+    const baseUrl = getBaseUrl(req);
+    const restoredSite: GeneratedSite = {
+      ...siteEntry,
+      html,
+      url: `${baseUrl}/sites/${slug}/`,
+      status: 'ready',
+    };
+
+    const registry = loadRegistry();
+    const existingIdx = registry.sites.findIndex(s => s.slug === slug);
+    if (existingIdx >= 0) {
+      registry.sites[existingIdx] = restoredSite;
+    } else {
+      registry.sites.unshift(restoredSite);
+    }
+    saveRegistry(registry);
+
+    return res.json({ success: true, data: restoredSite } as ApiResponse<GeneratedSite>);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
+  }
+});
+
+// POST /api/sites/import-raw — import a legacy ZIP without site.json
+// Reads colors and title from index.html, creates a minimal brandCard
+apiRouter.post('/sites/import-raw', uploadZip.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se recibió ningún archivo ZIP' } as ApiResponse<null>);
+    }
+
+    const directory = await unzipper.Open.buffer(req.file.buffer);
+
+    const htmlFile = directory.files.find((f: any) => f.path === 'index.html');
+    if (!htmlFile) {
+      return res.status(400).json({ success: false, error: 'ZIP inválido: falta index.html' } as ApiResponse<null>);
+    }
+    let html = (await htmlFile.buffer()).toString('utf8');
+
+    // Extract title from <title> tag
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    const rawName = titleMatch ? titleMatch[1].replace(/\s*[—\-|].*$/, '').trim() : 'Sitio importado';
+
+    // Derive slug from original filename or title
+    const zipName = req.file.originalname.replace(/\.zip$/i, '');
+    const slugBase = zipName && zipName !== 'file'
+      ? zipName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      : rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    // Make slug unique if already in registry
+    const registry = loadRegistry();
+    let slug = slugBase;
+    let counter = 1;
+    while (registry.sites.some(s => s.slug === slug)) {
+      slug = slugBase + '-' + counter++;
+    }
+
+    // Extract CSS variables from :root block
+    const extractVar = (name: string, fallback: string) => {
+      const m = html.match(new RegExp('--' + name + ':\s*([^;]+)'));
+      return m ? m[1].trim() : fallback;
+    };
+    const colors = {
+      bg:      extractVar('bg',      '#0a0a0a'),
+      surface: extractVar('surface', '#111111'),
+      accent:  extractVar('accent',  '#6366f1'),
+      text:    extractVar('text',    '#ffffff'),
+      muted:   extractVar('muted',   '#888888'),
+    };
+
+    // Restore asset files from ZIP → uploads/ (no site.json so origin unknown, uploads is safest)
+    const assetRestoreMap = new Map<string, string>();
+    for (const file of directory.files as any[]) {
+      const p: string = file.path;
+      const isImage = p.startsWith('images/') && !p.endsWith('/');
+      const isVideo = p.startsWith('videos/') && !p.endsWith('/');
+      if (!isImage && !isVideo) continue;
+
+      const filename = path.basename(p);
+      if (!/^[\w\-\.]+$/.test(filename)) continue;
+
+      const destDir = isVideo ? UPLOAD_VIDEOS_DIR : UPLOAD_IMAGES_DIR;
+      const urlPrefix = isVideo ? '/uploads/videos' : '/uploads/images';
+      const destPath = path.join(destDir, filename);
+      const publicUrl = urlPrefix + '/' + filename;
+
+      if (!fs.existsSync(destPath)) {
+        fs.mkdirSync(destDir, { recursive: true });
+        fs.writeFileSync(destPath, await file.buffer());
+      }
+      assetRestoreMap.set(p, publicUrl);
+    }
+
+    // Rewrite relative paths in HTML back to absolute server paths
+    for (const [zipPath, publicUrl] of assetRestoreMap.entries()) {
+      const escaped = zipPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp('(src|href)=["\']' + escaped + '["\']', 'g'), '$1="' + publicUrl + '"');
+      html = html.replace(new RegExp('url\\(["\']?' + escaped + '["\']?\\)', 'g'), 'url("' + publicUrl + '")');
+    }
+
+    // Detect heroImageUrl from HTML (first /generations/images reference)
+    const heroMatch = html.match(/\/generations\/images\/[\w\-\.]+/);
+    const heroImageUrl = heroMatch ? heroMatch[0] : undefined;
+
+    // Write HTML to disk
+    const siteDir = path.join(ROOT, 'public/sites', slug);
+    fs.mkdirSync(siteDir, { recursive: true });
+    fs.writeFileSync(path.join(siteDir, 'index.html'), html, 'utf8');
+
+    const baseUrl = getBaseUrl(req);
+    const restoredSite: GeneratedSite = {
+      id: randomUUID(),
+      slug,
+      brandCard: {
+        name: rawName,
+        slug,
+        industry: 'other',
+        businessType: 'other',
+        mood: 'minimal',
+        theme: colors.bg.toLowerCase() < '#888888' ? 'dark' : 'light',
+        language: 'es',
+        colors,
+        font: { display: 'Inter', body: 'Inter', googleFontsUrl: '' },
+        copy: {
+          headline: rawName,
+          tagline: '',
+          heroLine: '',
+          description: '',
+          services: [],
+          cta: '',
+        },
+      },
+      modules: { primary: MODULES[0]!, reasoning: ['Importado desde ZIP legado'] },
+      html,
+      createdAt: new Date().toISOString(),
+      url: baseUrl + '/sites/' + slug + '/',
+      status: 'ready',
+      heroImageUrl,
+    };
+
+    const existingIdx = registry.sites.findIndex(s => s.slug === slug);
+    if (existingIdx >= 0) {
+      registry.sites[existingIdx] = restoredSite;
+    } else {
+      registry.sites.unshift(restoredSite);
+    }
+    saveRegistry(registry);
+
+    return res.json({ success: true, data: restoredSite } as ApiResponse<GeneratedSite>);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
   }
 });

@@ -18,7 +18,7 @@ export function loadRegistry(): SiteRegistry {
   return JSON.parse(readFileSync(REGISTRY_PATH, 'utf-8'));
 }
 
-function saveRegistry(registry: SiteRegistry) {
+export function saveRegistry(registry: SiteRegistry) {
   ensureDir(dirname(REGISTRY_PATH));
   registry.updatedAt = new Date().toISOString();
   writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2));

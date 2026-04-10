@@ -690,7 +690,10 @@
     <!-- Sites grid -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <h2 style="font-size:1rem;font-weight:600;letter-spacing:-0.02em;">Sitios recientes</h2>
-      <a href="/gallery.html" style="font-size:0.8rem;color:var(--accent);text-decoration:none;font-weight:600;">Ver todos →</a>
+      <div style="display:flex;gap:0.75rem;align-items:center;">
+        <button onclick="openImportModal()" style="font-size:0.8rem;color:var(--muted2);background:var(--surface);border:1px solid var(--border);border-radius:0.5rem;padding:0.35rem 0.8rem;cursor:pointer;font-weight:500;">↑ Importar ZIP</button>
+        <a href="/gallery.html" style="font-size:0.8rem;color:var(--accent);text-decoration:none;font-weight:600;">Ver todos →</a>
+      </div>
     </div>
     <div class="sites-grid" id="sitesGrid"></div>
   </main>
@@ -1265,6 +1268,145 @@
 
   document.getElementById('color-editor-modal').addEventListener('click', function(e) {
     if (e.target === this) closeColorEditor();
+  });
+</script>
+
+<!-- Import ZIP Modal -->
+<div id="import-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:2rem;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+      <h2 style="font-size:1.1rem;font-weight:700;margin:0;">↑ Importar sitio desde ZIP</h2>
+      <button onclick="closeImportModal()" style="background:none;border:none;color:var(--muted2);font-size:1.25rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;background:var(--bg);border-radius:0.5rem;padding:0.25rem;">
+      <button id="import-tab-new" onclick="setImportMode('new')" style="flex:1;padding:0.4rem 0.5rem;border:none;border-radius:0.375rem;font-size:0.78rem;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;">Exportado aquí</button>
+      <button id="import-tab-legacy" onclick="setImportMode('legacy')" style="flex:1;padding:0.4rem 0.5rem;border:none;border-radius:0.375rem;font-size:0.78rem;font-weight:600;cursor:pointer;background:none;color:var(--muted2);">ZIP legado (sin site.json)</button>
+    </div>
+    <p id="import-desc" style="font-size:0.82rem;color:var(--muted2);margin-bottom:1.25rem;line-height:1.5;">
+      Selecciona un archivo <strong>.zip</strong> exportado desde este builder. Las imágenes y videos se restaurarán automáticamente. Si ya existen, no se duplicarán.
+    </p>
+    <label style="display:block;border:2px dashed var(--border);border-radius:0.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s;" id="import-drop-label">
+      <input type="file" id="import-file-input" accept=".zip" style="display:none;" onchange="handleImportFile(this)">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">📦</div>
+      <div style="font-size:0.85rem;color:var(--muted2);" id="import-file-name">Clic para seleccionar o arrastra el ZIP aquí</div>
+    </label>
+    <div id="import-progress" style="display:none;margin-top:1rem;font-size:0.82rem;color:var(--muted2);text-align:center;">Restaurando sitio…</div>
+    <div id="import-success" style="display:none;margin-top:1rem;padding:0.75rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:0.5rem;font-size:0.82rem;color:#4ade80;"></div>
+    <div id="import-error" style="display:none;margin-top:1rem;padding:0.75rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:0.5rem;font-size:0.82rem;color:#f87171;"></div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+      <button onclick="closeImportModal()" style="flex:1;padding:0.65rem;background:var(--surface2,#222);border:1px solid var(--border);border-radius:0.5rem;color:var(--text);cursor:pointer;font-size:0.875rem;">Cancelar</button>
+      <button id="import-apply-btn" onclick="doImport()" disabled style="flex:1;padding:0.65rem;background:var(--accent);border:none;border-radius:0.5rem;color:#fff;font-weight:600;cursor:pointer;font-size:0.875rem;opacity:0.5;">Importar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Import modal logic
+  let _importFile = null;
+  let _importMode = 'new'; // 'new' | 'legacy'
+
+  function setImportMode(mode) {
+    _importMode = mode;
+    const isLegacy = mode === 'legacy';
+    document.getElementById('import-tab-new').style.background = isLegacy ? 'none' : 'var(--accent)';
+    document.getElementById('import-tab-new').style.color = isLegacy ? 'var(--muted2)' : '#fff';
+    document.getElementById('import-tab-legacy').style.background = isLegacy ? 'var(--accent)' : 'none';
+    document.getElementById('import-tab-legacy').style.color = isLegacy ? '#fff' : 'var(--muted2)';
+    document.getElementById('import-desc').textContent = isLegacy
+      ? 'ZIP de versiones anteriores sin site.json. Se extraerán los colores y el título del HTML automáticamente.'
+      : 'Archivo .zip exportado desde este builder. Incluye site.json con todos los metadatos.';
+  }
+
+  function openImportModal() {
+    _importFile = null;
+    _importMode = 'new';
+    setImportMode('new');
+    document.getElementById('import-file-input').value = '';
+    document.getElementById('import-file-name').textContent = 'Clic para seleccionar o arrastra el ZIP aquí';
+    document.getElementById('import-progress').style.display = 'none';
+    document.getElementById('import-success').style.display = 'none';
+    document.getElementById('import-error').style.display = 'none';
+    document.getElementById('import-apply-btn').disabled = true;
+    document.getElementById('import-apply-btn').style.opacity = '0.5';
+    document.getElementById('import-modal').style.display = 'flex';
+  }
+
+  function closeImportModal() {
+    document.getElementById('import-modal').style.display = 'none';
+    _importFile = null;
+  }
+
+  function handleImportFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    _importFile = file;
+    document.getElementById('import-file-name').textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+    document.getElementById('import-apply-btn').disabled = false;
+    document.getElementById('import-apply-btn').style.opacity = '1';
+    document.getElementById('import-success').style.display = 'none';
+    document.getElementById('import-error').style.display = 'none';
+  }
+
+  // Drag & drop support
+  document.getElementById('import-drop-label').addEventListener('dragover', e => { e.preventDefault(); });
+  document.getElementById('import-drop-label').addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.zip')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const input = document.getElementById('import-file-input');
+      input.files = dt.files;
+      handleImportFile(input);
+    }
+  });
+
+  async function doImport() {
+    if (!_importFile) return;
+    const btn = document.getElementById('import-apply-btn');
+    const progress = document.getElementById('import-progress');
+    const successEl = document.getElementById('import-success');
+    const errorEl = document.getElementById('import-error');
+
+    btn.disabled = true;
+    btn.textContent = '…';
+    progress.style.display = 'block';
+    successEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    try {
+      const form = new FormData();
+      form.append('file', _importFile);
+      const endpoint = _importMode === 'legacy' ? '/api/sites/import-raw' : '/api/sites/import';
+      const res = await fetch(endpoint, { method: 'POST', body: form });
+      const data = await res.json();
+      progress.style.display = 'none';
+      if (data.success) {
+        successEl.textContent = '✓ Sitio "' + data.data.brandCard.name + '" restaurado correctamente.';
+        successEl.style.display = 'block';
+        btn.textContent = '✓ Listo';
+        // Refresh dashboard
+        if (typeof loadSites === 'function') loadSites();
+        setTimeout(closeImportModal, 2000);
+      } else {
+        errorEl.textContent = data.error || 'Error desconocido';
+        errorEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Importar';
+        btn.style.opacity = '1';
+      }
+    } catch (err) {
+      progress.style.display = 'none';
+      errorEl.textContent = 'Error de conexión: ' + err.message;
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Importar';
+      btn.style.opacity = '1';
+    }
+  }
+
+  document.getElementById('import-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeImportModal();
   });
 </script>
 </body>
