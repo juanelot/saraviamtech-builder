@@ -532,12 +532,30 @@ export async function buildLayoutPlan(
     'nature-earthy', 'gradient-flow',
   ];
 
+  // Rotating style directives — each seed picks a different creative constraint
+  const styleDirectives = [
+    'Go BRUTALLY MINIMAL: strip everything non-essential, let whitespace dominate, choose a razor-sharp single accent.',
+    'Go MAXIMALIST and KINETIC: layer elements, pick expressive heavy typography, use bold color blocks, choose animated sections.',
+    'Go DARK CINEMATIC: deep blacks, atmospheric glow effects, film-noir mood, pick sections with dramatic reveals.',
+    'Go EDITORIAL LUXURY: oversized serif headlines, generous spacing, restrained palette, high-contrast moments.',
+    'Go TECH-FORWARD: monospace accents, grid-heavy layout, data-driven sections, precise minimal UI.',
+    'Go WARM ORGANIC: earthy tones, handcrafted feel, curved elements, narrative-driven layout.',
+    'Go NEO-RETRO: bold chunky borders, saturated vintage palette, retro-grid layout, playful typography.',
+    'Go GLASSMORPHISM: frosted blurred surfaces, luminous borders, depth through layers.',
+    'Go SWISS GRID: strict horizontal bands, functional Helvetica-energy type, primary color blocks.',
+    'Go GRADIENT FLOW: fluid color transitions as identity, gradients everywhere, smooth morphing sections.',
+    'Go CYBERPUNK NEON: ultra-dark base + electric neon accents, glitch effects, scanline texture.',
+    'Go ART DECO: geometric ornaments, gold/black/ivory palette, symmetrical grandeur.',
+  ];
+  const directive = styleDirectives[effectiveSeed % styleDirectives.length];
+
   const systemPrompt = `${buildSkillContext(brand, effectiveSeed)}
 
 You are a senior art director generating a layout plan for a website. Return ONLY valid JSON.
 
-The layout plan must feel like a real production website — NOT a template. Every field must reflect the specific business and mood. Be bold and unexpected.
-IMPORTANT: Variation seed is ${effectiveSeed % 1000}. Use this to make design choices that are unique — pick personalities, fonts, and sections you wouldn't normally default to. Avoid the most common choices for this business type.`;
+The layout plan must feel like a real production website — NOT a template. Every field must reflect the specific business and mood.
+CREATIVE DIRECTIVE FOR THIS GENERATION: ${directive}
+Variation seed: ${effectiveSeed % 1000} — commit fully to the directive above. Avoid generic or default choices.`;
 
   const userPrompt = `
 Business: "${brand.name}"
