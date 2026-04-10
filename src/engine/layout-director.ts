@@ -32,13 +32,15 @@ const DESIGN_SYSTEM_MAP: Record<string, string[]> = {
   'professional-services':['stripe.md', 'intercom.md', 'ibm.md'],
 };
 
-function pickDesignSystem(businessType: string, theme: 'dark' | 'light'): string {
+function pickDesignSystem(businessType: string, theme: 'dark' | 'light', seed: number = 0): string {
   const options = DESIGN_SYSTEM_MAP[businessType] ?? ['linear.md', 'stripe.md', 'framer.md'];
   // Prefer dark systems for dark theme, light for light
   const darkSystems = ['linear.md', 'resend.md', 'sentry.md', 'framer.md', 'spotify.md', 'supabase.md', 'raycast.md'];
   const lightSystems = ['vercel.md', 'stripe.md', 'notion.md', 'airbnb.md', 'apple.md', 'cursor.md', 'ibm.md', 'intercom.md', 'figma.md'];
   const preferred = options.filter(f => theme === 'dark' ? darkSystems.includes(f) : lightSystems.includes(f));
-  const pick = preferred.length > 0 ? preferred[0] : options[0];
+  const pool = preferred.length > 0 ? preferred : options;
+  // Use seed to pick among all valid options, not always the first
+  const pick = pool[seed % pool.length]!;
   try {
     const content = readFileSync(join(DESIGN_SYSTEMS_DIR, pick!), 'utf-8');
     return `## Reference Design System (${pick!.replace('.md', '')} — adapt tokens, don't copy verbatim)\n\n${content}`;
@@ -479,8 +481,8 @@ function buildFallbackPlan(brand: BrandCard, imageCount: number, seed: number = 
 
 // ─── LLM-driven plan ─────────────────────────────────────────────────────────
 
-function buildSkillContext(brand: BrandCard): string {
-  const designSystem = pickDesignSystem(brand.businessType, brand.theme as 'dark' | 'light');
+function buildSkillContext(brand: BrandCard, seed: number = 0): string {
+  const designSystem = pickDesignSystem(brand.businessType, brand.theme as 'dark' | 'light', seed);
   return `You are applying the frontend-design skill:
 - Choose a BOLD aesthetic direction (brutally minimal, maximalist, editorial, dark cinematic, etc.)
 - Pick fonts that are distinctive — NEVER Inter or Roboto as display fonts
@@ -530,7 +532,7 @@ export async function buildLayoutPlan(
     'nature-earthy', 'gradient-flow',
   ];
 
-  const systemPrompt = `${buildSkillContext(brand)}
+  const systemPrompt = `${buildSkillContext(brand, effectiveSeed)}
 
 You are a senior art director generating a layout plan for a website. Return ONLY valid JSON.
 
