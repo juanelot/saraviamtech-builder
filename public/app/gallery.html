@@ -956,6 +956,9 @@
                 <button class="btn-action btn-action-ghost" onclick="openCustomizerForSite('${site.slug}', event)" title="Personalizar secciones" style="flex:0;padding:0.575rem 0.75rem;">
                   ✦
                 </button>
+                <button class="btn-action btn-action-ghost" onclick="openColorEditor('${site.slug}', event)" title="Editar paleta de colores" style="flex:0;padding:0.575rem 0.75rem;">
+                  🎨
+                </button>
                 <button class="btn-action btn-action-ghost" onclick="copyUrl('${site.url}', this)">
                   ${t('card.copy')}
                 </button>
@@ -1384,5 +1387,199 @@
 
 </script>
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<!-- ── Color Editor Modal ─────────────────────────────────────────────────── -->
+<div id="color-editor-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:1rem;width:100%;max-width:420px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.5);">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;">🎨 Editar paleta</div>
+        <div id="color-editor-site-name" style="font-size:0.75rem;color:var(--muted);margin-top:0.1rem;"></div>
+      </div>
+      <button onclick="closeColorEditor()" style="background:none;border:1px solid var(--border);color:var(--muted2);border-radius:0.5rem;padding:0.3rem 0.7rem;cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <!-- Color pickers -->
+    <div style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:-0.25rem;">Elige los colores de la paleta. El sitio se regenerará automáticamente.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <label style="display:flex;flex-direction:column;gap:0.35rem;">
+          <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);">Fondo (bg)</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:0.5rem;padding:0.4rem 0.6rem;">
+            <input type="color" id="cp-bg" style="width:1.75rem;height:1.75rem;border:none;background:none;cursor:pointer;border-radius:0.25rem;">
+            <span id="cp-bg-val" style="font-size:0.75rem;color:var(--muted2);font-family:monospace;"></span>
+          </div>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:0.35rem;">
+          <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);">Superficie</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:0.5rem;padding:0.4rem 0.6rem;">
+            <input type="color" id="cp-surface" style="width:1.75rem;height:1.75rem;border:none;background:none;cursor:pointer;border-radius:0.25rem;">
+            <span id="cp-surface-val" style="font-size:0.75rem;color:var(--muted2);font-family:monospace;"></span>
+          </div>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:0.35rem;">
+          <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);">Acento</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:0.5rem;padding:0.4rem 0.6rem;">
+            <input type="color" id="cp-accent" style="width:1.75rem;height:1.75rem;border:none;background:none;cursor:pointer;border-radius:0.25rem;">
+            <span id="cp-accent-val" style="font-size:0.75rem;color:var(--muted2);font-family:monospace;"></span>
+          </div>
+        </label>
+        <label style="display:flex;flex-direction:column;gap:0.35rem;">
+          <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);">Texto</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:0.5rem;padding:0.4rem 0.6rem;">
+            <input type="color" id="cp-text" style="width:1.75rem;height:1.75rem;border:none;background:none;cursor:pointer;border-radius:0.25rem;">
+            <span id="cp-text-val" style="font-size:0.75rem;color:var(--muted2);font-family:monospace;"></span>
+          </div>
+        </label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:0.35rem;">
+        <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);">Apagado / Muted</span>
+        <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:0.5rem;padding:0.4rem 0.6rem;">
+          <input type="color" id="cp-muted" style="width:1.75rem;height:1.75rem;border:none;background:none;cursor:pointer;border-radius:0.25rem;">
+          <span id="cp-muted-val" style="font-size:0.75rem;color:var(--muted2);font-family:monospace;"></span>
+        </div>
+      </label>
+
+      <!-- Preview swatch -->
+      <div id="color-preview-swatch" style="border-radius:0.625rem;overflow:hidden;border:1px solid var(--border);">
+        <div id="swatch-bg" style="padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;">
+          <span id="swatch-text" style="font-weight:700;font-size:0.9rem;">Vista previa</span>
+          <span id="swatch-btn" style="padding:0.3rem 0.85rem;border-radius:100px;font-size:0.75rem;font-weight:700;">CTA</span>
+        </div>
+        <div id="swatch-surface" style="padding:0.5rem 1rem;">
+          <span id="swatch-muted" style="font-size:0.75rem;">Texto secundario de ejemplo</span>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:0.75rem;">
+      <div style="display:flex;gap:0.75rem;">
+        <button id="color-apply-btn" onclick="applyColors()" style="flex:1;padding:0.625rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:0.5rem;font-family:inherit;font-size:0.875rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+          <div id="color-spin" style="width:1rem;height:1rem;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;"></div>
+          Aplicar paleta
+        </button>
+        <button onclick="closeColorEditor()" style="padding:0.625rem 1rem;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:0.5rem;font-family:inherit;font-size:0.875rem;font-weight:600;cursor:pointer;">Cancelar</button>
+      </div>
+      <div id="color-success" style="display:none;padding:0.625rem 1rem;background:rgba(76,168,121,0.1);border:1px solid rgba(76,168,121,0.3);border-radius:0.5rem;font-size:0.8rem;color:var(--success);display:none;align-items:center;gap:0.5rem;">
+        ✓ Paleta aplicada — <a id="color-success-link" href="#" target="_blank" style="color:var(--success);font-weight:700;">Ver sitio</a>
+      </div>
+      <div id="color-error" style="display:none;padding:0.625rem 1rem;background:rgba(232,93,58,0.1);border:1px solid rgba(232,93,58,0.3);border-radius:0.5rem;font-size:0.8rem;color:var(--error);"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let colorEditorSlug = null;
+
+  const cpIds = ['bg', 'surface', 'accent', 'text', 'muted'];
+
+  function updateColorVal(id) {
+    const val = document.getElementById('cp-' + id).value;
+    document.getElementById('cp-' + id + '-val').textContent = val;
+    updateSwatch();
+  }
+
+  function updateSwatch() {
+    const bg = document.getElementById('cp-bg').value;
+    const surface = document.getElementById('cp-surface').value;
+    const accent = document.getElementById('cp-accent').value;
+    const text = document.getElementById('cp-text').value;
+    const muted = document.getElementById('cp-muted').value;
+    document.getElementById('swatch-bg').style.background = bg;
+    document.getElementById('swatch-surface').style.background = surface;
+    document.getElementById('swatch-text').style.color = text;
+    document.getElementById('swatch-btn').style.background = accent;
+    document.getElementById('swatch-btn').style.color = '#fff';
+    document.getElementById('swatch-muted').style.color = muted;
+  }
+
+  function openColorEditor(slug, ev) {
+    if (ev) ev.stopPropagation();
+    colorEditorSlug = slug;
+    const site = allSites.find(s => s.slug === slug);
+    if (!site) return;
+
+    document.getElementById('color-editor-site-name').textContent = site.brandCard.name;
+    document.getElementById('color-success').style.display = 'none';
+    document.getElementById('color-error').style.display = 'none';
+    document.getElementById('color-apply-btn').disabled = false;
+
+    const c = site.brandCard.colors;
+    cpIds.forEach(id => {
+      const el = document.getElementById('cp-' + id);
+      // Normalize to #rrggbb for color input (handles names or shorthand)
+      el.value = normalizeHex(c[id] || '#000000');
+      document.getElementById('cp-' + id + '-val').textContent = el.value;
+      el.oninput = () => updateColorVal(id);
+    });
+
+    updateSwatch();
+    document.getElementById('color-editor-modal').style.display = 'flex';
+  }
+
+  function closeColorEditor() {
+    document.getElementById('color-editor-modal').style.display = 'none';
+    colorEditorSlug = null;
+  }
+
+  function normalizeHex(color) {
+    // Use canvas to resolve any CSS color to #rrggbb
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function applyColors() {
+    if (!colorEditorSlug) return;
+    const btn = document.getElementById('color-apply-btn');
+    const spin = document.getElementById('color-spin');
+    const successEl = document.getElementById('color-success');
+    const errorEl = document.getElementById('color-error');
+
+    btn.disabled = true;
+    spin.style.display = 'block';
+    successEl.style.display = 'none';
+    errorEl.style.display = 'none';
+
+    const colors = {};
+    cpIds.forEach(id => { colors[id] = document.getElementById('cp-' + id).value; });
+
+    try {
+      const res = await fetch(`/api/sites/${colorEditorSlug}/colors`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(colors),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      const url = data.data.url || `/sites/${data.data.slug}/`;
+      document.getElementById('color-success-link').href = url;
+      successEl.style.display = 'flex';
+
+      // Update local data
+      const idx = allSites.findIndex(s => s.slug === colorEditorSlug);
+      if (idx >= 0) {
+        allSites[idx] = data.data;
+        renderGallery();
+      }
+    } catch (e) {
+      errorEl.textContent = 'Error: ' + e.message;
+      errorEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      spin.style.display = 'none';
+    }
+  }
+
+  document.getElementById('color-editor-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeColorEditor();
+  });
+</script>
 </body>
 </html>

@@ -245,6 +245,7 @@ export async function buildSite(
   extraImages?: string[],       // additional images from gallery
   customSections?: string[],    // optional override: ordered list of section types
   noAI?: boolean,               // skip LLM, use deterministic fallback (for previews)
+  seed?: number,
 ): Promise<string> {
 
   // 1. Optionally scrape source URL for extra context
@@ -274,7 +275,7 @@ export async function buildSite(
 
   // 3. Get layout plan from director (LLM or deterministic fallback)
   // Pass total unique image count so the director can include gallery/carousel sections
-  const plan: LayoutPlan = await buildLayoutPlan(brand, uniqueImages.length, scrapedData, noAI);
+  const plan: LayoutPlan = await buildLayoutPlan(brand, uniqueImages.length, scrapedData, noAI, seed);
   let { tokens, sections } = plan;
 
   // If a heroVideoUrl is provided, force the first section to a video-capable hero

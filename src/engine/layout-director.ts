@@ -273,56 +273,61 @@ const FONT_CATALOG: Record<string, Pick<DesignTokens, 'displayFont' | 'bodyFont'
 
 // ─── Deterministic fallback plans by personality ─────────────────────────────
 
-function buildFallbackPlan(brand: BrandCard, imageCount: number): LayoutPlan {
+// Seed-based picker for layout director
+function ldSeedPick<T>(arr: T[], seed: number): T {
+  return arr[seed % arr.length]!;
+}
+
+function buildFallbackPlan(brand: BrandCard, imageCount: number, seed: number = Date.now()): LayoutPlan {
   const { businessType, mood, theme, colors } = brand;
 
-  // Select personality deterministically
-  const personalityMap: Record<string, DesignPersonality> = {
-    'luxury-jewelry':       'luxury-editorial',
-    'restaurant-food':      'warm-organic',
-    'saas-tech':            'tech-precision',
-    'agency-studio':        'dark-cinematic',
-    'portfolio-creative':   'brutalist-bold',
-    'ecommerce':            'minimal-light',
-    'fitness-health':       'brutalist-bold',
-    'auto-detailing':       'dark-cinematic',
-    'real-estate':          'luxury-editorial',
-    'professional-services':'minimal-light',
-    // New business types
-    'music-events':         'cyberpunk-neon',
-    'education':            'swiss-grid',
-    'beauty-salon':         'gradient-flow',
-    'legal-finance':        'minimal-light',
-    'construction':         'brutalist-bold',
-    'pet-services':         'nature-earthy',
-    'nonprofit':            'warm-organic',
-    'photography':          'dark-cinematic',
-    'travel-tourism':       'glassmorphism',
-    'gaming-esports':       'cyberpunk-neon',
+  // 1:N personality map — seed picks among 2-3 options per type
+  const personalityMap: Record<string, DesignPersonality[]> = {
+    'luxury-jewelry':        ['luxury-editorial', 'art-deco-geometric', 'minimal-light'],
+    'restaurant-food':       ['warm-organic', 'nature-earthy', 'luxury-editorial'],
+    'saas-tech':             ['tech-precision', 'dark-cinematic', 'swiss-grid'],
+    'agency-studio':         ['dark-cinematic', 'brutalist-bold', 'glassmorphism'],
+    'portfolio-creative':    ['brutalist-bold', 'dark-cinematic', 'playful-maximalist'],
+    'ecommerce':             ['minimal-light', 'gradient-flow', 'glassmorphism'],
+    'fitness-health':        ['brutalist-bold', 'dark-cinematic', 'neo-retro'],
+    'auto-detailing':        ['dark-cinematic', 'brutalist-bold', 'tech-precision'],
+    'real-estate':           ['luxury-editorial', 'minimal-light', 'swiss-grid'],
+    'professional-services': ['minimal-light', 'swiss-grid', 'tech-precision'],
+    'music-events':          ['cyberpunk-neon', 'dark-cinematic', 'brutalist-bold'],
+    'education':             ['swiss-grid', 'minimal-light', 'gradient-flow'],
+    'beauty-salon':          ['gradient-flow', 'warm-organic', 'glassmorphism'],
+    'legal-finance':         ['minimal-light', 'swiss-grid', 'luxury-editorial'],
+    'construction':          ['brutalist-bold', 'dark-cinematic', 'swiss-grid'],
+    'pet-services':          ['nature-earthy', 'warm-organic', 'playful-maximalist'],
+    'nonprofit':             ['warm-organic', 'nature-earthy', 'gradient-flow'],
+    'photography':           ['dark-cinematic', 'minimal-light', 'luxury-editorial'],
+    'travel-tourism':        ['glassmorphism', 'gradient-flow', 'nature-earthy'],
+    'gaming-esports':        ['cyberpunk-neon', 'brutalist-bold', 'dark-cinematic'],
   };
 
-  const personality: DesignPersonality =
-    (personalityMap[businessType] as DesignPersonality) ?? 'dark-cinematic';
+  const personalityOptions = personalityMap[businessType] ?? ['dark-cinematic', 'minimal-light', 'brutalist-bold'];
+  const personality: DesignPersonality = ldSeedPick(personalityOptions, seed);
 
-  const fontMap: Record<DesignPersonality, string> = {
-    'luxury-editorial':   'instrument-serif-work',
-    'warm-organic':       'fraunces-outfit',
-    'tech-precision':     'editorial-neue-mono',
-    'dark-cinematic':     'bricolage-figtree',
-    'brutalist-bold':     'unbounded-inter',
-    'minimal-light':      'bodoni-ibm-plex',
-    'playful-maximalist': 'chillax-epilogue',
-    'art-deco-geometric': 'playfair-karla',
-    // New personalities
-    'neo-retro':          'righteous-dm',
-    'glassmorphism':      'bricolage-figtree',
-    'swiss-grid':         'josefin-lato',
-    'cyberpunk-neon':     'orbitron-exo',
-    'nature-earthy':      'cormorant-plus-jost',
-    'gradient-flow':      'raleway-nunito',
+  // 1:N font map — each personality gets 2-3 options
+  const fontMap: Record<DesignPersonality, string[]> = {
+    'luxury-editorial':   ['instrument-serif-work', 'cormorant-plus-jost', 'playfair-karla'],
+    'warm-organic':       ['fraunces-outfit', 'canela-apercu', 'dm-serif-inter'],
+    'tech-precision':     ['editorial-neue-mono', 'geist-mono', 'space-mono-inter'],
+    'dark-cinematic':     ['bricolage-figtree', 'syne-space', 'chillax-epilogue'],
+    'brutalist-bold':     ['unbounded-inter', 'bebas-dm', 'archivo-source'],
+    'minimal-light':      ['bodoni-ibm-plex', 'instrument-serif-work', 'cabinet-satoshi'],
+    'playful-maximalist': ['chillax-epilogue', 'righteous-dm', 'raleway-nunito'],
+    'art-deco-geometric': ['playfair-karla', 'bodoni-ibm-plex', 'cormorant-plus-jost'],
+    'neo-retro':          ['righteous-dm', 'josefin-lato', 'bebas-dm'],
+    'glassmorphism':      ['bricolage-figtree', 'syne-space', 'chillax-epilogue'],
+    'swiss-grid':         ['josefin-lato', 'space-mono-inter', 'archivo-source'],
+    'cyberpunk-neon':     ['orbitron-exo', 'editorial-neue-mono', 'bebas-dm'],
+    'nature-earthy':      ['cormorant-plus-jost', 'fraunces-outfit', 'dm-serif-inter'],
+    'gradient-flow':      ['raleway-nunito', 'bricolage-figtree', 'chillax-epilogue'],
   };
 
-  const fontKey = fontMap[personality];
+  const fontOptions = fontMap[personality];
+  const fontKey = ldSeedPick(fontOptions, seed + 7); // offset seed so font != palette pick
   const fontTokens = FONT_CATALOG[fontKey]!;
 
   const tokens: DesignTokens = {
@@ -491,9 +496,11 @@ export async function buildLayoutPlan(
   imageCount: number = 0,
   scrapedData?: { headlines?: string[]; colors?: string[]; images?: string[] },
   noAI?: boolean,
+  seed?: number,
 ): Promise<LayoutPlan> {
+  const effectiveSeed = seed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
   if (noAI || !hasOpenAI()) {
-    return buildFallbackPlan(brand, imageCount);
+    return buildFallbackPlan(brand, imageCount, effectiveSeed);
   }
 
   const fontOptions = Object.entries(FONT_CATALOG)
@@ -527,7 +534,8 @@ export async function buildLayoutPlan(
 
 You are a senior art director generating a layout plan for a website. Return ONLY valid JSON.
 
-The layout plan must feel like a real production website — NOT a template. Every field must reflect the specific business and mood. Be bold and unexpected.`;
+The layout plan must feel like a real production website — NOT a template. Every field must reflect the specific business and mood. Be bold and unexpected.
+IMPORTANT: Variation seed is ${effectiveSeed % 1000}. Use this to make design choices that are unique — pick personalities, fonts, and sections you wouldn't normally default to. Avoid the most common choices for this business type.`;
 
   const userPrompt = `
 Business: "${brand.name}"
@@ -536,6 +544,7 @@ Mood: ${brand.mood}
 Theme: ${brand.theme}
 Existing accent color: ${brand.colors.accent}
 Description: ${brand.copy.description}
+Variation seed: ${effectiveSeed % 1000}
 ${scrapedData?.headlines?.length ? `Scraped headlines: ${scrapedData.headlines.slice(0, 4).join(' | ')}` : ''}
 ${scrapedData?.colors?.length ? `Scraped brand colors: ${scrapedData.colors.slice(0, 5).join(', ')}` : ''}
 Images available: ${imageCount}
@@ -591,7 +600,7 @@ Return JSON exactly matching this shape:
 }`;
 
   try {
-    const raw = await creativeChat(systemPrompt, userPrompt);
+    const raw = await creativeChat(systemPrompt, userPrompt, effectiveSeed);
     const parsed = parseJSON<any>(raw);
 
     const fontKey: string = parsed.fontKey ?? 'syne-space';
@@ -629,6 +638,6 @@ Return JSON exactly matching this shape:
     };
   } catch (err) {
     console.warn('[layout-director] LLM plan failed, using fallback:', err);
-    return buildFallbackPlan(brand, imageCount);
+    return buildFallbackPlan(brand, imageCount, effectiveSeed);
   }
 }

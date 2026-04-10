@@ -35,6 +35,7 @@ export async function miniChat(
 export async function creativeChat(
   systemPrompt: string,
   userPrompt: string,
+  seed?: number,
 ): Promise<string> {
   const client = getClient();
   const res = await client.chat.completions.create({
@@ -43,7 +44,8 @@ export async function creativeChat(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ],
-    temperature: 0.7,
+    temperature: 0.9,
+    ...(seed !== undefined ? { seed } : {}),
   });
   return res.choices[0]?.message?.content ?? '';
 }

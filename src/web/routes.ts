@@ -67,6 +67,9 @@ apiRouter.post('/sites', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: businessName, businessType, mood, theme' } as ApiResponse<null>);
     }
 
+    // Generate a variation seed — each request gets unique output even for same business type
+    const variationSeed = (body as any).seed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
+
     const brandCard = await analyzeBrand(
       body.businessName,
       body.businessType,
@@ -76,6 +79,7 @@ apiRouter.post('/sites', async (req, res) => {
       body.sourceUrl,
       body.language ?? 'es',
       body.socialUrls,
+      variationSeed,
     );
 
     // If rebuilding an existing site, carry over media that isn't re-supplied
@@ -91,7 +95,7 @@ apiRouter.post('/sites', async (req, res) => {
       (socialGalleryUrls.length ? socialGalleryUrls : undefined);
 
     const modules = pickModules(body.businessType, body.preferredModules);
-    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections);
+    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections, undefined, variationSeed);
 
     const site: GeneratedSite = {
       id: existingSite?.id ?? randomUUID(),
@@ -134,6 +138,42 @@ apiRouter.delete('/sites/:slug', (req, res) => {
   const ok = deleteSite(req.params.slug);
   if (!ok) return res.status(404).json({ success: false, error: 'Site not found' } as ApiResponse<null>);
   return res.json({ success: true } as ApiResponse<null>);
+});
+
+// PATCH /api/sites/:slug/colors — update palette and re-render site HTML
+apiRouter.patch('/sites/:slug/colors', async (req, res) => {
+  try {
+    const registry = loadRegistry();
+    const idx = registry.sites.findIndex(s => s.slug === req.params.slug);
+    if (idx < 0) return res.status(404).json({ success: false, error: 'Site not found' } as ApiResponse<null>);
+
+    const { bg, surface, accent, text, muted } = req.body as Record<string, string>;
+    if (!bg || !surface || !accent || !text || !muted) {
+      return res.status(400).json({ success: false, error: 'Missing color fields: bg, surface, accent, text, muted' } as ApiResponse<null>);
+    }
+
+    const site = registry.sites[idx]!;
+    const updatedBrandCard = {
+      ...site.brandCard,
+      colors: { bg, surface, accent, text, muted },
+    };
+
+    const html = await buildSite(
+      updatedBrandCard,
+      site.modules,
+      site.heroImageUrl,
+      site.heroVideoUrl,
+      site.galleryImageUrls,
+      undefined,
+      true, // noAI — just re-render with new colors
+    );
+
+    const updatedSite: GeneratedSite = { ...site, brandCard: updatedBrandCard, html };
+    const published = publishSite(updatedSite, getBaseUrl(req));
+    return res.json({ success: true, data: published } as ApiResponse<GeneratedSite>);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
+  }
 });
 
 // POST /api/scrape - scrape a URL and return extracted brand data
@@ -267,8 +307,9 @@ apiRouter.get('/sections/:type/preview', async (req, res) => {
 // POST /api/analyze - analyze brand + optionally enrich copy with OpenAI
 apiRouter.post('/analyze', async (req, res) => {
   try {
-    const { businessName, businessType, mood, theme, description, sourceUrl, language, socialUrls } = req.body;
-    const brand = await analyzeBrand(businessName, businessType, mood, theme, description, sourceUrl, language ?? 'es', socialUrls);
+    const { businessName, businessType, mood, theme, description, sourceUrl, language, socialUrls, seed: reqSeed } = req.body;
+    const analysisSeed = reqSeed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
+    const brand = await analyzeBrand(businessName, businessType, mood, theme, description, sourceUrl, language ?? 'es', socialUrls, analysisSeed);
 
     // Copy enrichment already handled inside analyzeBrand — skip duplicate call here
 
