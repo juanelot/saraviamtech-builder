@@ -1,6 +1,6 @@
 # SaraviamTech Builder
 
-Generador de sitios web cinematográficos impulsado por IA. Analiza un negocio, extrae datos de marca, y produce un sitio HTML único y listo para producción con layouts dinámicos, animaciones, imágenes y videos generados por IA — todo en una sola solicitud.
+Generador de sitios web cinematográficos impulsado por IA. Analiza un negocio, extrae datos de marca y produce una **base HTML lista para producción** con diseños dinámicos, animaciones, imágenes y videos generados por IA — todo en una sola solicitud. El resultado es un punto de partida sólido y personalizado que puede refinarse y adaptarse antes del despliegue final.
 
 ---
 
