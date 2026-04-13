@@ -4,6 +4,70 @@ Generador de sitios web cinematográficos impulsado por IA. Analiza un negocio, 
 
 ---
 
+## Capturas de Pantalla
+
+### Builder — Paso 1: Brief del negocio
+Configura nombre, tipo de negocio, mood, tema, idioma y tipo de sitio (Completo o Landing Page). Opcionalmente agrega descripción y URLs de redes sociales para enriquecer la marca con scraping automático.
+
+![Builder - Brief](capturas%20de%20aplicacion%20de%20plantillas%20web/builder1.png)
+![Builder - Brief con datos](capturas%20de%20aplicacion%20de%20plantillas%20web/builder2.png)
+
+### Builder — Paso 2: Marca generada por IA
+GPT-4o genera automáticamente paleta de colores, tipografía y copywriting (headline, tagline, descripción, CTA, servicios). También selecciona los módulos cinematográficos ideales para la industria y mood.
+
+![Builder - Paleta y copy](capturas%20de%20aplicacion%20de%20plantillas%20web/builder3.png)
+![Builder - Módulos cinematográficos](capturas%20de%20aplicacion%20de%20plantillas%20web/builder4.png)
+
+### Builder — Paso 3: Imágenes generadas por IA
+Genera imágenes hero y de galería via **nano-banana (kie.ai / Flux)**. Soporta generación de múltiples imágenes o subida de imágenes propias.
+
+![Builder - Imágenes IA](capturas%20de%20aplicacion%20de%20plantillas%20web/builder5.png)
+![Builder - Subida de imágenes](capturas%20de%20aplicacion%20de%20plantillas%20web/builder6.png)
+![Builder - Galería generada](capturas%20de%20aplicacion%20de%20plantillas%20web/builder7.png)
+![Builder - Selección de imagen hero](capturas%20de%20aplicacion%20de%20plantillas%20web/builder8.png)
+
+### Builder — Paso 4: Video hero con Kling 3.0
+Genera video cinematográfico a partir de la imagen hero via **Kling 3.0 (kie.ai)**. Soporta generación automática o subida de video propio.
+
+![Builder - Generar video](capturas%20de%20aplicacion%20de%20plantillas%20web/builder9.png)
+![Builder - Subida de video](capturas%20de%20aplicacion%20de%20plantillas%20web/builder10.png)
+
+### Builder — Paso 5: Construir sitio
+Resumen completo del sitio antes de construir: negocio, tipo, módulos seleccionados, imagen hero, galería, video y paleta de color.
+
+![Builder - Resumen del sitio](capturas%20de%20aplicacion%20de%20plantillas%20web/builder11.png)
+![Builder - Construyendo...](capturas%20de%20aplicacion%20de%20plantillas%20web/builder12.png)
+![Builder - Sitio generado](capturas%20de%20aplicacion%20de%20plantillas%20web/builder13.png)
+
+### Sitio generado — Resultado final
+Ejemplo de sitio completo generado para `coffee_lite` (restaurante-food, dark, premium). Incluye hero con video, story narrative, carrusel de imágenes, coverflow, formulario de contacto y footer cinematográfico.
+
+![Sitio - Hero con video](capturas%20de%20aplicacion%20de%20plantillas%20web/builder14.png)
+![Sitio - Story narrative con stats](capturas%20de%20aplicacion%20de%20plantillas%20web/builder15.png)
+![Sitio - Carrusel de imágenes](capturas%20de%20aplicacion%20de%20plantillas%20web/builder16.png)
+![Sitio - Coverflow gallery](capturas%20de%20aplicacion%20de%20plantillas%20web/builder17.png)
+![Sitio - Formulario de contacto](capturas%20de%20aplicacion%20de%20plantillas%20web/builder18.png)
+
+### Dashboard y Galería
+Vista principal con sitios recientes, conteo total y acceso rápido. La galería muestra todos los sitios con sus módulos, tipo (badge Landing), acciones y URL en vivo.
+
+![Dashboard](capturas%20de%20aplicacion%20de%20plantillas%20web/builder19.png)
+![Galería de sitios](capturas%20de%20aplicacion%20de%20plantillas%20web/builder20.png)
+
+### Recursos — Generaciones de IA
+Biblioteca de imágenes y videos generados con IA, organizados y reutilizables en cualquier sitio.
+
+![Recursos - Generaciones](capturas%20de%20aplicacion%20de%20plantillas%20web/builder21.png)
+
+### Configuración
+Panel para gestionar claves API (OpenAI, Kie.ai), Token MCP, URL base del servidor y estado del sistema en tiempo real — sin editar archivos manualmente.
+
+![Configuración - API Keys](capturas%20de%20aplicacion%20de%20plantillas%20web/builder22.png)
+![Configuración - MCP Token](capturas%20de%20aplicacion%20de%20plantillas%20web/builder23.png)
+![Configuración - URL del servidor](capturas%20de%20aplicacion%20de%20plantillas%20web/builder24.png)
+
+---
+
 ## Qué hace
 
 1. **Análisis de Marca** — Recibe nombre del negocio, tipo, mood, tema e descripción opcional o URLs sociales. Usa GPT-4o para generar copywriting (titulares, taglines, descripciones, CTAs) en español o inglés.
