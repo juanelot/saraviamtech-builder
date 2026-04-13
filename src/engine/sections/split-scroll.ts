@@ -83,6 +83,14 @@ export function renderSplitScroll(
     </div>`).join('');
 
   return `
+<style>
+  @media (max-width: 768px) {
+    #${sid}-driver { height:auto !important; }
+    #${sid}-sticky { position:relative !important; height:auto !important; flex-direction:column !important; overflow:visible !important; }
+    #${sid}-left, #${sid}-right { position:relative !important; transform:none !important; left:auto !important; right:auto !important; }
+    #${sid}-left > div, #${sid}-right > div { height:auto !important; min-height:0 !important; padding:2.5rem 1.25rem !important; }
+  }
+</style>
 <section id="services" style="background:${tokens.bg};position:relative;">
   <!-- Section header -->
   <div style="padding:${sp.section};padding-bottom:0;text-align:center;">

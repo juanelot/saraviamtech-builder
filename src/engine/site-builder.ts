@@ -67,6 +67,30 @@ import { renderDynamicIsland } from './sections/dynamic-island.js';
 function renderNav(brand: BrandCard, tokens: DesignTokens): string {
   const { copy } = brand;
   return `
+<style>
+  #site-nav-links { display:flex;gap:2rem;align-items:center; }
+  #nav-hamburger { display:none;background:none;border:none;cursor:pointer;padding:0.25rem;color:${tokens.text}; }
+  #nav-drawer {
+    display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;
+    background:${tokens.bg}f5;backdrop-filter:blur(20px);
+    flex-direction:column;align-items:center;justify-content:center;gap:2rem;
+  }
+  #nav-drawer.open { display:flex; }
+  #nav-drawer a {
+    font-size:1.5rem;font-weight:600;color:${tokens.text};text-decoration:none;
+    font-family:'${tokens.displayFont}',serif;letter-spacing:-0.02em;
+    transition:color 0.2s;
+  }
+  #nav-drawer a:hover { color:${tokens.accent}; }
+  #nav-drawer-close {
+    position:absolute;top:1.5rem;right:1.5rem;background:none;border:none;
+    cursor:pointer;color:${tokens.muted};font-size:1.5rem;line-height:1;
+  }
+  @media (max-width: 768px) {
+    #site-nav-links { display:none !important; }
+    #nav-hamburger { display:flex !important; }
+  }
+</style>
 <nav id="site-nav" style="
   position:fixed;top:0;left:0;right:0;z-index:1000;
   padding:1.25rem 2.5rem;
@@ -78,12 +102,23 @@ function renderNav(brand: BrandCard, tokens: DesignTokens): string {
   font-family:'${tokens.bodyFont}',sans-serif;
 ">
   <div style="font-family:'${tokens.displayFont}',serif;font-weight:700;font-size:1.1rem;letter-spacing:-0.03em;color:${tokens.text};">${brand.name}</div>
-  <div style="display:flex;gap:2rem;align-items:center;">
+  <div id="site-nav-links">
     <a href="#services" style="font-size:0.85rem;color:${tokens.muted};text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='${tokens.text}'" onmouseout="this.style.color='${tokens.muted}'">${t('footer.services', brand.language)}</a>
     <a href="#contact" style="font-size:0.85rem;color:${tokens.muted};text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='${tokens.text}'" onmouseout="this.style.color='${tokens.muted}'">${t('footer.contact', brand.language)}</a>
     <a href="#contact" style="display:inline-flex;align-items:center;padding:0.6rem 1.5rem;background:${tokens.accent};color:#fff;font-weight:600;font-size:0.8rem;border-radius:0.5rem;text-decoration:none;">${copy.cta}</a>
   </div>
+  <button id="nav-hamburger" onclick="document.getElementById('nav-drawer').classList.add('open')" aria-label="Abrir menú">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="2" y1="5" x2="20" y2="5"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
 </nav>
+<div id="nav-drawer">
+  <button id="nav-drawer-close" onclick="document.getElementById('nav-drawer').classList.remove('open')" aria-label="Cerrar menú">✕</button>
+  <a href="#services" onclick="document.getElementById('nav-drawer').classList.remove('open')">${t('footer.services', brand.language)}</a>
+  <a href="#contact" onclick="document.getElementById('nav-drawer').classList.remove('open')">${t('footer.contact', brand.language)}</a>
+  <a href="#contact" onclick="document.getElementById('nav-drawer').classList.remove('open')" style="color:${tokens.accent};">${copy.cta}</a>
+</div>
 <script>
 (function(){
   var nav = document.getElementById('site-nav');
@@ -342,6 +377,7 @@ export async function buildSite(
     }
     img, video { max-width: 100%; }
     a { color: inherit; }
+    html, body { overflow-x: hidden; }
     /* ── Scroll reveal animations ── */
     .reveal {
       opacity: 0;
@@ -389,12 +425,55 @@ export async function buildSite(
       0%, 100% { opacity: 0.4; }
       50% { opacity: 0.8; }
     }
+    /* ── Mobile responsive ── */
     @media (max-width: 768px) {
-      section { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
-      [style*="grid-template-columns:1fr 1fr"], [style*="grid-template-columns:1fr 1.2fr"], [style*="grid-template-columns:1fr 1.5fr"], [style*="grid-template-columns:2fr 1fr 1fr"] {
-        grid-template-columns: 1fr !important;
+      section {
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
       }
       nav { padding: 1rem 1.25rem !important; }
+      /* Colapsar cualquier grid multi-columna a 1 columna */
+      [style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+      }
+      /* Resetear spans de bento grid */
+      [style*="grid-column:span"] {
+        grid-column: span 1 !important;
+      }
+      [style*="grid-column: span"] {
+        grid-column: span 1 !important;
+      }
+      /* Colapsar flex rows que deberían stackearse */
+      [style*="display:flex"][style*="justify-content:space-between"] {
+        flex-direction: column !important;
+        gap: 1rem !important;
+      }
+      /* Reducir padding de secciones internas */
+      [style*="max-width:1200px"], [style*="max-width:1100px"], [style*="max-width:1300px"], [style*="max-width:900px"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      /* Ocultar elementos decorativos solo para móvil */
+      .mobile-hide { display: none !important; }
+      /* Hero: reducir altura mínima */
+      #hero { min-height: 100svh !important; }
+      /* Writing mode vertical — ocultar en móvil */
+      [style*="writing-mode:vertical"] { display: none !important; }
+      [style*="writing-mode: vertical"] { display: none !important; }
+      /* Ajustar padding de hero para no quedar bajo nav */
+      #hero > div { padding-bottom: 3rem !important; }
+    }
+    @media (max-width: 480px) {
+      /* Tipografía: limitar tamaños mínimos de h1 */
+      h1 { font-size: clamp(2rem, 9vw, 4rem) !important; line-height: 1.1 !important; }
+      h2 { font-size: clamp(1.5rem, 7vw, 2.5rem) !important; }
+      /* Padding de secciones aún más compacto */
+      section { padding-left: 1rem !important; padding-right: 1rem !important; }
+      /* Botones: stackear verticalmente */
+      [style*="display:flex"][style*="gap:1rem"] { flex-wrap: wrap !important; }
+      /* Imagen lateral decorativa en heroes — ocultar */
+      [style*="right:0;top:0;width:45%"],
+      [style*="right:0;top:0;width:38%"] { display: none !important; }
     }
   </style>
   ${tokens.grainOverlay ? grainStyle() : ''}

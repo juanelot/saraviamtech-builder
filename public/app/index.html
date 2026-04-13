@@ -620,14 +620,111 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-    @media (max-width: 768px) {
+    /* ── Mobile header ── */
+    .mob-header {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.875rem 1.25rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mob-header-logo {
+      display: flex; align-items: center; gap: 0.5rem;
+      text-decoration: none; color: var(--text);
+    }
+    .mob-menu-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted2); padding: 0.25rem; display: flex;
+    }
+    /* Mobile drawer overlay */
+    .mob-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+    }
+    .mob-overlay.open { display: block; }
+    /* Mobile sidebar drawer */
+    .mob-drawer {
+      position: fixed; top: 0; left: -280px; bottom: 0;
+      width: 260px; z-index: 400;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      transition: left 0.3s cubic-bezier(.16,1,.3,1);
+      padding: 1.5rem 1rem;
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .mob-drawer.open { left: 0; }
+    .mob-drawer-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 1.25rem;
+      align-self: flex-end; margin-bottom: 1rem;
+      padding: 0.25rem;
+    }
+    @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar { display: none; }
-      .main { padding: 1rem; }
+      .main { padding: 1.25rem; padding-top: 5rem; }
+      .mob-header { display: flex; }
+      .form-row { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 480px) {
+      .main { padding: 0.875rem; padding-top: 4.75rem; }
+      .card-body { padding: 1.25rem; }
+      .card-header { padding: 1.25rem; }
+      .sites-grid { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
 <body>
+
+<!-- ── Mobile header ── -->
+<header class="mob-header">
+  <a href="/" class="mob-header-logo">
+    <div class="logo-mark">ST</div>
+    <span class="logo-text">SaraviamTech</span>
+  </a>
+  <button class="mob-menu-btn" onclick="openMobDrawer()" aria-label="Abrir menú">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="2" y1="5" x2="20" y2="5"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+</header>
+
+<!-- ── Mobile drawer overlay + drawer ── -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeMobDrawer()"></div>
+<nav class="mob-drawer" id="mob-drawer">
+  <button class="mob-drawer-close" onclick="closeMobDrawer()" aria-label="Cerrar menú">✕</button>
+  <a href="/" class="sidebar-logo" style="margin-bottom:1.5rem;">
+    <div class="logo-mark">ST</div>
+    <div>
+      <div class="logo-text">SaraviamTech</div>
+      <div class="logo-sub">Dashboard</div>
+    </div>
+  </a>
+  <div class="sidebar-label">Workspace</div>
+  <a href="/" class="nav-item" onclick="closeMobDrawer()">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </a>
+  <a href="/builder.html" class="nav-item" onclick="closeMobDrawer()">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Builder
+  </a>
+  <a href="/gallery.html" class="nav-item" onclick="closeMobDrawer()">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Galería
+  </a>
+  <a href="/generations.html" class="nav-item" onclick="closeMobDrawer()">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Generations
+  </a>
+  <a href="/settings.html" class="nav-item" onclick="closeMobDrawer()">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Configuración
+  </a>
+</nav>
 
 <div class="layout">
   <!-- ── Sidebar ── -->
@@ -1408,6 +1505,18 @@
   document.getElementById('import-modal').addEventListener('click', function(e) {
     if (e.target === this) closeImportModal();
   });
+</script>
+<script>
+function openMobDrawer() {
+  document.getElementById('mob-drawer').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobDrawer() {
+  document.getElementById('mob-drawer').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
 </script>
 </body>
 </html>
