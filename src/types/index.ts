@@ -106,11 +106,27 @@ export interface GeneratedSite {
   heroImageUrl?: string;
   heroVideoUrl?: string;
   galleryImageUrls?: string[];
+  siteType?: SiteType;
 }
 
 export interface SiteRegistry {
   sites: GeneratedSite[];
   updatedAt: string;
+}
+
+export type SiteType = 'full' | 'landing';
+
+export interface LandingConfig {
+  /** Primary conversion goal shown above the fold */
+  goal?: string;
+  /** CTA button text (overrides brand.copy.cta if set) */
+  ctaText?: string;
+  /** Whether to include a pricing section */
+  showPricing?: boolean;
+  /** Whether to include an FAQ section */
+  showFaq?: boolean;
+  /** Whether to include a short lead form (vs full contact form) */
+  showLeadForm?: boolean;
 }
 
 export interface CreateSiteRequest {
@@ -127,6 +143,8 @@ export interface CreateSiteRequest {
   galleryImageUrls?: string[];  // additional images for gallery/carousel
   customSections?: string[];    // optional ordered list of section types to override AI plan
   socialUrls?: string[];        // URLs de redes sociales o sitio web del negocio para scraping
+  siteType?: SiteType;          // 'full' (default) or 'landing' (single-goal conversion page)
+  landingConfig?: LandingConfig; // extra config when siteType === 'landing'
 }
 
 export interface ApiResponse<T> {

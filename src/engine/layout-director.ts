@@ -99,7 +99,15 @@ export type SectionType =
   | 'dock-nav'            // macOS Dock style nav with icon magnification
   | 'drag-pan'            // infinite draggable canvas in any direction
   | 'dynamic-island'      // pill-shaped element morphs to show brand content
-  | 'footer';             // site footer (always last)
+  | 'footer'              // site footer (always last)
+  // ─── Landing Page exclusive sections ───────────────────────────────────────
+  | 'landing-hero'        // conversion hero: badge + headline + dual CTA + social proof
+  | 'landing-benefits'    // 4-column benefits grid with icons
+  | 'landing-social-proof'// logo tiles + trust stats strip
+  | 'landing-pricing'     // 3-column pricing cards (center highlighted)
+  | 'landing-cta-final'   // full-width accent CTA band before footer
+  | 'landing-lead-form'   // short 3-field lead capture form
+  | 'landing-footer';     // minimal footer (no heavy nav columns)
 
 export type DesignPersonality =
   | 'luxury-editorial'      // Vogue, Chanel energy — refined, spacious, serif-heavy
@@ -476,6 +484,79 @@ function buildFallbackPlan(brand: BrandCard, imageCount: number, seed: number = 
     tokens,
     sections: taggedSections,
     reasoning: `Deterministic plan for ${businessType} with ${personality} personality.`,
+  };
+}
+
+// ─── Landing Page plan ───────────────────────────────────────────────────────
+
+export interface LandingPlanOptions {
+  showPricing?: boolean;
+  showFaq?: boolean;
+  showLeadForm?: boolean;
+}
+
+/**
+ * buildLandingPlan — deterministic plan optimised for conversion landing pages.
+ * Reuses the same token system but selects a stripped-down section sequence.
+ */
+export function buildLandingPlan(
+  brand: BrandCard,
+  imageCount: number = 0,
+  opts: LandingPlanOptions = {},
+  seed: number = 0,
+): LayoutPlan {
+  // Reuse the same token derivation from the full plan fallback
+  const fullPlan = buildFallbackPlan(brand, imageCount, seed);
+  const { tokens, personality } = fullPlan;
+
+  const sections: SectionPlan[] = [
+    { type: 'landing-hero', data: { personality } },
+    { type: 'landing-benefits', data: { personality } },
+    { type: 'landing-social-proof', data: { personality } },
+  ];
+
+  // Include carousel if images are available
+  if (imageCount >= 2) {
+    sections.push({ type: 'carousel', data: { personality } });
+  }
+
+  // Services section — pick a lightweight one
+  const svcCount = brand.copy.services?.length ?? 0;
+  if (svcCount >= 3) {
+    sections.push({ type: 'flip-cards', data: { personality } });
+  } else if (svcCount >= 2) {
+    sections.push({ type: 'services-grid', data: { personality } });
+  }
+
+  // Testimonials — always high-converting
+  sections.push({ type: 'testimonials', data: { personality } });
+
+  // Optional sections
+  if (opts.showPricing !== false) {
+    sections.push({ type: 'landing-pricing', data: { personality } });
+  }
+
+  if (opts.showFaq !== false) {
+    sections.push({ type: 'faq-accordion', data: { personality } });
+  }
+
+  // Final CTA band
+  sections.push({ type: 'landing-cta-final', data: { personality } });
+
+  // Lead form (short) or full contact form
+  if (opts.showLeadForm !== false) {
+    sections.push({ type: 'landing-lead-form', data: { personality } });
+  } else {
+    sections.push({ type: 'contact-form', data: { personality } });
+  }
+
+  sections.push({ type: 'landing-footer', data: { personality } });
+
+  return {
+    personality,
+    tokens,
+    sections,
+    reasoning: `Landing page plan for ${brand.businessType} with ${personality} personality.`,
   };
 }
 

@@ -835,6 +835,7 @@
             <div class="site-card-meta">
               <span class="tag accent">${site.brandCard.language ?? 'es'}</span>
               <span class="tag">${site.brandCard.theme}</span>
+              ${site.siteType === 'landing' ? '<span class="tag" style="background:rgba(79,70,229,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.25);">🎯 Landing</span>' : ''}
               <span class="tag" style="margin-left:auto;color:var(--muted)">${timeAgo(site.createdAt)}</span>
             </div>
             <div class="site-card-actions">

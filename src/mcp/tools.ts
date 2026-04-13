@@ -78,7 +78,7 @@ export const mcpTools = [
 
   {
     name: 'create_site',
-    description: 'Generate a complete cinematic HTML website for a business. Runs brand analysis, module selection, and site build in one step.',
+    description: 'Generate a complete cinematic HTML website for a business. Runs brand analysis, module selection, and site build in one step. Set siteType to "landing" for a single-goal conversion landing page.',
     inputSchema: z.object({
       businessName: z.string().describe('Name of the business'),
       businessType: z.enum(BUSINESS_TYPES),
@@ -92,6 +92,14 @@ export const mcpTools = [
       heroVideoUrl: z.string().optional().describe('Public URL of a hero video to embed in the site (e.g. /generations/videos/abc.mp4)'),
       galleryImageUrls: z.array(z.string()).optional().describe('Public URLs of gallery images to embed'),
       preferredModules: z.array(z.string()).optional().describe('Module IDs to prefer, e.g. ["07", "25"]'),
+      siteType: z.enum(['full', 'landing']).optional().default('full').describe('"full" = cinematic multi-section site (default); "landing" = single-goal conversion page with benefits, pricing, FAQ, lead form'),
+      landingConfig: z.object({
+        goal: z.string().optional().describe('Primary conversion goal text shown in the hero sub-headline'),
+        ctaText: z.string().optional().describe('Override the CTA button text'),
+        showPricing: z.boolean().optional().describe('Include pricing section (default: true)'),
+        showFaq: z.boolean().optional().describe('Include FAQ section (default: true)'),
+        showLeadForm: z.boolean().optional().describe('Include short lead form (default: true)'),
+      }).optional().describe('Extra config when siteType is "landing"'),
     }),
     handler: async (args: any) => {
       const brand = await analyzeBrand(
@@ -105,6 +113,11 @@ export const mcpTools = [
         args.heroImageUrl,
         args.heroVideoUrl,
         args.galleryImageUrls,
+        undefined,
+        undefined,
+        undefined,
+        args.siteType ?? 'full',
+        args.landingConfig,
       );
 
       const site: GeneratedSite = {
@@ -116,6 +129,7 @@ export const mcpTools = [
         createdAt: new Date().toISOString(),
         url: '',
         status: 'generating',
+        siteType: args.siteType ?? 'full',
       };
 
       const published = publishSite(site, BASE_URL);
@@ -127,6 +141,7 @@ export const mcpTools = [
             message: `Site created successfully for ${args.businessName}`,
             slug: published.slug,
             url: published.url,
+            siteType: args.siteType ?? 'full',
             modules: {
               primary: modules.primary.name,
               secondary: modules.secondary?.name,

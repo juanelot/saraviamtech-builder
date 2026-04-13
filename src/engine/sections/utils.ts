@@ -57,6 +57,54 @@ const STRINGS: Record<string, Record<Lang, string>> = {
   'story.satisfaction': { es: 'Satisfacción del cliente', en: 'Client satisfaction' },
   // services
   'services.desc':      { es: 'Aportamos experiencia y precisión en cada área de trabajo.', en: 'We bring expertise and precision to every engagement in this area.' },
+  // landing — hero conversion
+  'landing.hero.badge':     { es: 'Nuevo', en: 'New' },
+  'landing.hero.social':    { es: 'Más de {n} clientes satisfechos', en: 'Trusted by {n}+ happy clients' },
+  // landing — benefits
+  'landing.benefits.label': { es: 'Por qué elegirnos', en: 'Why choose us' },
+  'landing.benefits.h2':    { es: 'Todo lo que necesitas para crecer', en: 'Everything you need to grow' },
+  'landing.benefits.b1.title': { es: 'Resultados rápidos', en: 'Fast results' },
+  'landing.benefits.b1.desc':  { es: 'Entregamos en tiempo récord sin sacrificar calidad.', en: 'We deliver in record time without sacrificing quality.' },
+  'landing.benefits.b2.title': { es: 'Soporte dedicado', en: 'Dedicated support' },
+  'landing.benefits.b2.desc':  { es: 'Un equipo experto disponible cuando lo necesitas.', en: 'An expert team available when you need them.' },
+  'landing.benefits.b3.title': { es: 'Probado y escalable', en: 'Proven & scalable' },
+  'landing.benefits.b3.desc':  { es: 'Soluciones que crecen con tu negocio.', en: 'Solutions that scale with your business.' },
+  'landing.benefits.b4.title': { es: 'Sin complicaciones', en: 'No hassle' },
+  'landing.benefits.b4.desc':  { es: 'Proceso claro, comunicación directa, sin sorpresas.', en: 'Clear process, direct communication, no surprises.' },
+  // landing — social proof
+  'landing.proof.label':   { es: 'Empresas que confían en nosotros', en: 'Trusted by' },
+  'landing.proof.h2':      { es: 'Ellos ya lo comprobaron', en: 'They already verified it' },
+  // landing — pricing
+  'landing.pricing.label': { es: 'Planes', en: 'Pricing' },
+  'landing.pricing.h2':    { es: 'Inversión clara, sin sorpresas', en: 'Clear pricing, no surprises' },
+  'landing.pricing.popular': { es: 'Más popular', en: 'Most popular' },
+  'landing.pricing.cta':   { es: 'Comenzar ahora', en: 'Get started' },
+  'landing.pricing.p1.name': { es: 'Starter', en: 'Starter' },
+  'landing.pricing.p1.price': { es: '$299', en: '$299' },
+  'landing.pricing.p1.period': { es: '/ mes', en: '/ month' },
+  'landing.pricing.p1.desc': { es: 'Perfecto para comenzar', en: 'Perfect to get started' },
+  'landing.pricing.p2.name': { es: 'Pro', en: 'Pro' },
+  'landing.pricing.p2.price': { es: '$799', en: '$799' },
+  'landing.pricing.p2.period': { es: '/ mes', en: '/ month' },
+  'landing.pricing.p2.desc': { es: 'Para negocios en crecimiento', en: 'For growing businesses' },
+  'landing.pricing.p3.name': { es: 'Enterprise', en: 'Enterprise' },
+  'landing.pricing.p3.price': { es: 'Custom', en: 'Custom' },
+  'landing.pricing.p3.period': { es: '', en: '' },
+  'landing.pricing.p3.desc': { es: 'Soluciones a medida', en: 'Tailored solutions' },
+  // landing — cta-final
+  'landing.ctafinal.label': { es: 'Listo para comenzar', en: 'Ready to start' },
+  'landing.ctafinal.h2':    { es: 'Da el siguiente paso hoy', en: 'Take the next step today' },
+  'landing.ctafinal.sub':   { es: 'Sin compromisos. Sin tarjeta de crédito. Solo resultados.', en: 'No commitments. No credit card. Just results.' },
+  // landing — lead form
+  'landing.form.label':    { es: 'Contacto rápido', en: 'Quick contact' },
+  'landing.form.h2':       { es: 'Hablemos de tu proyecto', en: "Let's talk about your project" },
+  'landing.form.name':     { es: 'Tu nombre', en: 'Your name' },
+  'landing.form.email':    { es: 'Tu correo', en: 'Your email' },
+  'landing.form.message':  { es: 'Cuéntanos brevemente (opcional)', en: 'Tell us briefly (optional)' },
+  'landing.form.submit':   { es: 'Enviar mensaje', en: 'Send message' },
+  'landing.form.privacy':  { es: 'No compartimos tu información con terceros.', en: 'We never share your info with third parties.' },
+  // landing — footer minimal
+  'landing.footer.rights': { es: 'Todos los derechos reservados.', en: 'All rights reserved.' },
 };
 
 export function t(key: string, lang: Lang = 'es'): string {

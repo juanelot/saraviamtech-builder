@@ -701,6 +701,48 @@
               <option value="en">🇺🇸 English</option>
             </select>
           </div>
+          <!-- ── Tipo de sitio ── -->
+          <div class="field full">
+            <label>Tipo de sitio</label>
+            <div style="display:flex;gap:0.75rem;margin-top:0.25rem;">
+              <label id="site-type-full-lbl" style="flex:1;display:flex;align-items:center;gap:0.75rem;padding:0.875rem 1rem;border:1px solid var(--accent);border-radius:var(--radius);cursor:pointer;background:var(--accent-light);transition:all 0.2s;">
+                <input type="radio" name="f-site-type" value="full" checked style="display:none;">
+                <div style="flex-shrink:0;width:1.5rem;height:1.5rem;border-radius:0.375rem;background:var(--accent);display:flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text);">Sitio Completo</div>
+                  <div style="font-size:0.72rem;color:var(--muted2);">Multi-sección, cinematic</div>
+                </div>
+              </label>
+              <label id="site-type-landing-lbl" style="flex:1;display:flex;align-items:center;gap:0.75rem;padding:0.875rem 1rem;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all 0.2s;">
+                <input type="radio" name="f-site-type" value="landing" style="display:none;">
+                <div style="flex-shrink:0;width:1.5rem;height:1.5rem;border-radius:0.375rem;background:var(--surface2);display:flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text);">Landing Page</div>
+                  <div style="font-size:0.72rem;color:var(--muted2);">1 objetivo, más conversión</div>
+                </div>
+              </label>
+            </div>
+            <!-- Landing options (hidden until landing selected) -->
+            <div id="landing-options" style="display:none;margin-top:0.875rem;padding:0.875rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);">
+              <p style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.625rem;">Secciones opcionales</p>
+              <div style="display:flex;flex-wrap:wrap;gap:0.625rem;">
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text);cursor:pointer;">
+                  <input type="checkbox" id="lc-pricing" checked> Precios
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text);cursor:pointer;">
+                  <input type="checkbox" id="lc-faq" checked> FAQ
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text);cursor:pointer;">
+                  <input type="checkbox" id="lc-leadform" checked> Formulario corto
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div class="field full">
             <label>Descripcion adicional (opcional)</label>
             <textarea id="f-desc" placeholder="Servicios, estilo, palabras clave, referencias..."></textarea>
@@ -1643,11 +1685,26 @@ function goToBuild() {
   renderBuildSummary();
 }
 
+function getSiteType() {
+  const checked = document.querySelector('input[name="f-site-type"]:checked');
+  return checked ? checked.value : 'full';
+}
+
+function getLandingConfig() {
+  return {
+    showPricing: document.getElementById('lc-pricing') ? document.getElementById('lc-pricing').checked : true,
+    showFaq: document.getElementById('lc-faq') ? document.getElementById('lc-faq').checked : true,
+    showLeadForm: document.getElementById('lc-leadform') ? document.getElementById('lc-leadform').checked : true,
+  };
+}
+
 function renderBuildSummary() {
   const { brand, modules, selectedImageUrl, selectedVideoUrl } = state;
   const mods = [modules.primary, modules.secondary, modules.tertiary].filter(Boolean);
+  const siteType = getSiteType();
   $('build-summary').innerHTML = `
     <div><span style="color:var(--muted)">Negocio:</span> ${brand.name}</div>
+    <div><span style="color:var(--muted)">Tipo de sitio:</span> ${siteType === 'landing' ? '🎯 Landing Page' : '🌐 Sitio Completo'}</div>
     <div><span style="color:var(--muted)">Tipo:</span> ${brand.businessType}</div>
     <div><span style="color:var(--muted)">Idioma:</span> ${(state.language || 'es') === 'es' ? '🇪🇸 Español' : '🇺🇸 English'}</div>
     <div><span style="color:var(--muted)">Modulos:</span> ${mods.map(m => m.name).join(', ')}</div>
@@ -1669,6 +1726,7 @@ $('btn-build').addEventListener('click', async () => {
   const { brand } = state;
 
   try {
+    const siteType = getSiteType();
     const r = await api('POST', '/sites', {
       businessName: brand.name,
       businessType: brand.businessType,
@@ -1681,6 +1739,8 @@ $('btn-build').addEventListener('click', async () => {
       heroVideoUrl: state.selectedVideoUrl || undefined,
       galleryImageUrls: state.galleryImageUrls.length ? state.galleryImageUrls : undefined,
       socialUrls: state.socialUrls.length ? state.socialUrls : undefined,
+      siteType,
+      landingConfig: siteType === 'landing' ? getLandingConfig() : undefined,
     });
 
     if (!r.success) throw new Error(r.error);
@@ -1841,6 +1901,8 @@ $('btn-rebuild').addEventListener('click', async () => {
       galleryImageUrls: state.galleryImageUrls.length ? state.galleryImageUrls : undefined,
       customSections: selectedSections,
       socialUrls: state.socialUrls.length ? state.socialUrls : undefined,
+      siteType: getSiteType(),
+      landingConfig: getSiteType() === 'landing' ? getLandingConfig() : undefined,
     });
 
     if (!r.success) throw new Error(r.error);
@@ -2126,6 +2188,49 @@ document.getElementById('section-preview-modal').addEventListener('click', funct
 <script>
 function openMobDrawer() { document.getElementById('mob-drawer').classList.add('open'); document.getElementById('mob-overlay').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeMobDrawer() { document.getElementById('mob-drawer').classList.remove('open'); document.getElementById('mob-overlay').classList.remove('open'); document.body.style.overflow=''; }
+</script>
+<script>
+// ─── Site type toggle UI ────────────────────────────────────────────────────
+(function() {
+  var radios = document.querySelectorAll('input[name="f-site-type"]');
+  var fullLbl = document.getElementById('site-type-full-lbl');
+  var landingLbl = document.getElementById('site-type-landing-lbl');
+  var landingOpts = document.getElementById('landing-options');
+  var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f46e5';
+  var accentLight = getComputedStyle(document.documentElement).getPropertyValue('--accent-light').trim() || 'rgba(79,70,229,0.12)';
+  var border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.07)';
+  var surface2 = getComputedStyle(document.documentElement).getPropertyValue('--surface2').trim() || '#18181c';
+
+  function updateToggle() {
+    var val = document.querySelector('input[name="f-site-type"]:checked').value;
+    if (val === 'full') {
+      fullLbl.style.border = '1px solid var(--accent)';
+      fullLbl.style.background = 'var(--accent-light)';
+      landingLbl.style.border = '1px solid var(--border)';
+      landingLbl.style.background = '';
+      landingOpts.style.display = 'none';
+      fullLbl.querySelector('div').style.background = 'var(--accent)';
+      landingLbl.querySelector('div').style.background = 'var(--surface2)';
+    } else {
+      landingLbl.style.border = '1px solid var(--accent)';
+      landingLbl.style.background = 'var(--accent-light)';
+      fullLbl.style.border = '1px solid var(--border)';
+      fullLbl.style.background = '';
+      landingOpts.style.display = 'block';
+      landingLbl.querySelector('div').style.background = 'var(--accent)';
+      fullLbl.querySelector('div').style.background = 'var(--surface2)';
+    }
+  }
+
+  radios.forEach(function(r) { r.addEventListener('change', updateToggle); });
+  // Also allow clicking the whole label
+  [fullLbl, landingLbl].forEach(function(lbl) {
+    lbl.addEventListener('click', function() {
+      lbl.querySelector('input').checked = true;
+      updateToggle();
+    });
+  });
+})();
 </script>
 </body>
 </html>

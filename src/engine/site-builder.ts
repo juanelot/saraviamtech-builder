@@ -7,8 +7,8 @@
  *
  * Falls back to a deterministic plan (no OpenAI needed) when AI is unavailable.
  */
-import type { BrandCard, ModuleSelection } from '../types/index.js';
-import { buildLayoutPlan, type LayoutPlan, type DesignTokens, type SectionPlan } from './layout-director.js';
+import type { BrandCard, ModuleSelection, SiteType, LandingConfig } from '../types/index.js';
+import { buildLayoutPlan, buildLandingPlan, type LayoutPlan, type DesignTokens, type SectionPlan } from './layout-director.js';
 import { scrapeUrl } from './scraper.js';
 
 import { t } from './sections/utils.js';
@@ -61,8 +61,77 @@ import { renderGradientStroke } from './sections/gradient-stroke.js';
 import { renderDockNav } from './sections/dock-nav.js';
 import { renderDragPan } from './sections/drag-pan.js';
 import { renderDynamicIsland } from './sections/dynamic-island.js';
+import { renderLandingHero } from './sections/landing-hero.js';
+import { renderLandingBenefits } from './sections/landing-benefits.js';
+import { renderLandingSocialProof } from './sections/landing-social-proof.js';
+import { renderLandingPricing } from './sections/landing-pricing.js';
+import { renderLandingCtaFinal } from './sections/landing-cta-final.js';
+import { renderLandingLeadForm } from './sections/landing-lead-form.js';
+import { renderLandingFooter } from './sections/landing-footer.js';
 
 // ─── Nav (always rendered outside the section pipeline) ─────────────────────
+
+/** Minimal landing nav — logo only + single CTA anchored to lead form */
+function renderLandingNav(brand: BrandCard, tokens: DesignTokens): string {
+  const { copy } = brand;
+  return `
+<style>
+  #landing-nav-hamburger { display:none;background:none;border:none;cursor:pointer;padding:0.25rem;color:${tokens.text}; }
+  #landing-nav-drawer {
+    display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;
+    background:${tokens.bg}f5;backdrop-filter:blur(20px);
+    flex-direction:column;align-items:center;justify-content:center;gap:2rem;
+  }
+  #landing-nav-drawer.open { display:flex; }
+  #landing-nav-drawer a { font-size:1.5rem;font-weight:600;color:${tokens.text};text-decoration:none;font-family:'${tokens.displayFont}',serif; }
+  #landing-nav-drawer a:hover { color:${tokens.accent}; }
+  #landing-nav-drawer-close { position:absolute;top:1.5rem;right:1.5rem;background:none;border:none;cursor:pointer;color:${tokens.muted};font-size:1.5rem; }
+  @media (max-width: 768px) {
+    #landing-nav-links { display:none !important; }
+    #landing-nav-hamburger { display:flex !important; }
+  }
+</style>
+<nav id="landing-site-nav" style="
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:1.25rem 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:${tokens.bg}00;backdrop-filter:blur(0px);
+  border-bottom:1px solid transparent;
+  transition:background 0.4s,backdrop-filter 0.4s,border-color 0.4s;
+  font-family:'${tokens.bodyFont}',sans-serif;
+">
+  <div style="font-family:'${tokens.displayFont}',serif;font-weight:700;font-size:1.1rem;letter-spacing:-0.03em;color:${tokens.text};">${brand.name}</div>
+  <div id="landing-nav-links" style="display:flex;align-items:center;gap:1.5rem;">
+    <a href="#benefits" style="font-size:0.85rem;color:${tokens.muted};text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='${tokens.text}'" onmouseout="this.style.color='${tokens.muted}'">${brand.language === 'en' ? 'Benefits' : 'Beneficios'}</a>
+    <a href="#pricing" style="font-size:0.85rem;color:${tokens.muted};text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='${tokens.text}'" onmouseout="this.style.color='${tokens.muted}'">${brand.language === 'en' ? 'Pricing' : 'Precios'}</a>
+    <a href="#lead-form" style="display:inline-flex;align-items:center;padding:0.6rem 1.5rem;background:${tokens.accent};color:#fff;font-weight:600;font-size:0.8rem;border-radius:0.5rem;text-decoration:none;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">${copy.cta}</a>
+  </div>
+  <button id="landing-nav-hamburger" onclick="document.getElementById('landing-nav-drawer').classList.add('open')" aria-label="Abrir menú">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="2" y1="5" x2="20" y2="5"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="17" x2="20" y2="17"/>
+    </svg>
+  </button>
+</nav>
+<div id="landing-nav-drawer">
+  <button id="landing-nav-drawer-close" onclick="document.getElementById('landing-nav-drawer').classList.remove('open')">✕</button>
+  <a href="#benefits" onclick="document.getElementById('landing-nav-drawer').classList.remove('open')">${brand.language === 'en' ? 'Benefits' : 'Beneficios'}</a>
+  <a href="#pricing" onclick="document.getElementById('landing-nav-drawer').classList.remove('open')">${brand.language === 'en' ? 'Pricing' : 'Precios'}</a>
+  <a href="#lead-form" onclick="document.getElementById('landing-nav-drawer').classList.remove('open')" style="color:${tokens.accent};">${copy.cta}</a>
+</div>
+<script>
+(function(){
+  var nav = document.getElementById('landing-site-nav');
+  window.addEventListener('scroll', function() {
+    var s = window.scrollY > 60;
+    if(nav){
+      nav.style.background = s ? '${tokens.bg}e8' : '${tokens.bg}00';
+      nav.style.backdropFilter = s ? 'blur(16px)' : 'blur(0px)';
+      nav.style.borderBottomColor = s ? '${tokens.muted}28' : 'transparent';
+    }
+  });
+})();
+</script>`;
+}
 
 function renderNav(brand: BrandCard, tokens: DesignTokens): string {
   const { copy } = brand;
@@ -193,8 +262,16 @@ function renderSection(
     case 'gradient-stroke':   return renderGradientStroke(brand, tokens, d);
     case 'dock-nav':          return renderDockNav(brand, tokens, d);
     case 'drag-pan':          return renderDragPan(brand, tokens, d);
-    case 'dynamic-island':    return renderDynamicIsland(brand, tokens, d);
-    default:                  return '';
+    case 'dynamic-island':      return renderDynamicIsland(brand, tokens, d);
+    // ─── Landing Page sections ──────────────────────────────────────────────
+    case 'landing-hero':        return renderLandingHero(brand, tokens, d);
+    case 'landing-benefits':    return renderLandingBenefits(brand, tokens, d);
+    case 'landing-social-proof':return renderLandingSocialProof(brand, tokens, d);
+    case 'landing-pricing':     return renderLandingPricing(brand, tokens, d);
+    case 'landing-cta-final':   return renderLandingCtaFinal(brand, tokens, d);
+    case 'landing-lead-form':   return renderLandingLeadForm(brand, tokens, d);
+    case 'landing-footer':      return renderLandingFooter(brand, tokens, d);
+    default:                    return '';
   }
 }
 
@@ -281,6 +358,8 @@ export async function buildSite(
   customSections?: string[],    // optional override: ordered list of section types
   noAI?: boolean,               // skip LLM, use deterministic fallback (for previews)
   seed?: number,
+  siteType?: SiteType,          // 'full' (default) or 'landing'
+  landingConfig?: LandingConfig,
 ): Promise<string> {
 
   // 1. Optionally scrape source URL for extra context
@@ -310,7 +389,17 @@ export async function buildSite(
 
   // 3. Get layout plan from director (LLM or deterministic fallback)
   // Pass total unique image count so the director can include gallery/carousel sections
-  const plan: LayoutPlan = await buildLayoutPlan(brand, uniqueImages.length, scrapedData, noAI, seed);
+  let plan: LayoutPlan;
+  if (siteType === 'landing') {
+    const effectiveSeed = seed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
+    plan = buildLandingPlan(brand, uniqueImages.length, {
+      showPricing: landingConfig?.showPricing,
+      showFaq: landingConfig?.showFaq,
+      showLeadForm: landingConfig?.showLeadForm,
+    }, effectiveSeed);
+  } else {
+    plan = await buildLayoutPlan(brand, uniqueImages.length, scrapedData, noAI, seed);
+  }
   let { tokens, sections } = plan;
 
   // If a heroVideoUrl is provided, force the first section to a video-capable hero
@@ -479,7 +568,7 @@ export async function buildSite(
   ${tokens.grainOverlay ? grainStyle() : ''}
 </head>
 <body>
-${renderNav(brand, tokens)}
+${siteType === 'landing' ? renderLandingNav(brand, tokens) : renderNav(brand, tokens)}
 ${sectionHtml}
 ${globalScripts()}
 </body>

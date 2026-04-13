@@ -109,7 +109,7 @@ apiRouter.post('/sites', async (req, res) => {
       (socialGalleryUrls.length ? socialGalleryUrls : undefined);
 
     const modules = pickModules(body.businessType, body.preferredModules);
-    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections, undefined, variationSeed);
+    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections, undefined, variationSeed, body.siteType, body.landingConfig);
 
     const site: GeneratedSite = {
       id: existingSite?.id ?? randomUUID(),
@@ -123,6 +123,7 @@ apiRouter.post('/sites', async (req, res) => {
       heroImageUrl,
       heroVideoUrl,
       galleryImageUrls,
+      siteType: body.siteType ?? 'full',
     };
 
     const published = publishSite(site, getBaseUrl(req));

@@ -12,7 +12,8 @@ Generador de sitios web cinematográficos impulsado por IA. Analiza un negocio, 
 4. **Módulos Cinematográficos** — Inyecta módulos de animación interactivos (scroll-driven, cursor/hover, click/tap, ambiente) seleccionados por la IA según industria y mood.
 5. **Generación de Imágenes con IA** — Genera imágenes hero y de galería via **nano-banana (kie.ai / Flux)** con prompts elaborados por LLM específicos a la industria, mood y estilo visual del negocio.
 6. **Generación de Video con IA** — Genera un video hero cinematográfico via **Kling 3.0 (kie.ai)** con prompts elaborados por LLM adaptados a la industria, sujeto y mood — sin plantillas genéricas.
-7. **Salida del Sitio** — Produce un archivo HTML standalone servido en `/sites/:slug`, registrado en un registro de sitios en vivo.
+7. **Landing Pages** — Genera sitios de conversión optimizados (landing pages) con secciones especializadas: hero con CTA doble, beneficios, prueba social, precios, FAQ, formulario de captación y footer minimalista. Seleccionable desde el builder o vía MCP.
+8. **Salida del Sitio** — Produce un archivo HTML standalone servido en `/sites/:slug`, registrado en un registro de sitios en vivo.
 
 ---
 
@@ -45,7 +46,14 @@ src/
 │   ├── social-scraper.ts       # Scraping de perfiles de redes sociales
 │   ├── module-picker.ts        # Selector de módulos cinematográficos
 │   ├── publisher.ts            # Escritura de archivos de sitio + gestión del registro
-│   └── sections/               # Más de 40 renderizadores de secciones HTML
+│   └── sections/               # Más de 47 renderizadores de secciones HTML
+│       ├── landing-hero.ts             # (Landing) Hero conversión con CTA doble + prueba social
+│       ├── landing-benefits.ts         # (Landing) Grid de beneficios con iconos SVG
+│       ├── landing-social-proof.ts     # (Landing) Logos de empresas + stats de impacto
+│       ├── landing-pricing.ts          # (Landing) 3 planes de precios con plan destacado
+│       ├── landing-cta-final.ts        # (Landing) Banda de cierre con CTA de conversión
+│       ├── landing-lead-form.ts        # (Landing) Formulario de captación (nombre, email, mensaje)
+│       ├── landing-footer.ts           # (Landing) Footer minimalista marca + copyright
 │       ├── hero-fullbleed.ts
 │       ├── hero-split.ts
 │       ├── hero-editorial.ts
@@ -143,9 +151,21 @@ data/
   "heroImageUrl": "/generations/images/abc.jpg",
   "heroVideoUrl": "/generations/videos/xyz.mp4",
   "galleryImageUrls": ["/generations/images/1.jpg", "/generations/images/2.jpg"],
-  "customSections": ["hero-fullbleed", "gallery-masonry", "contact-form"]
+  "customSections": ["hero-fullbleed", "gallery-masonry", "contact-form"],
+  "siteType": "landing",
+  "landingConfig": {
+    "goal": "Captar leads para consulta gratuita",
+    "ctaText": "Reservar Mesa Ahora",
+    "showPricing": true,
+    "showFaq": true,
+    "showLeadForm": true
+  }
 }
 ```
+
+> `siteType`: `"full"` (por defecto) | `"landing"` — determina si se genera un sitio cinematográfico completo o una landing page de conversión.
+>
+> `landingConfig` solo aplica cuando `siteType: "landing"`. Todos sus campos son opcionales; por defecto todos los módulos están activos (`true`).
 
 ### Generación de Imágenes
 
@@ -455,6 +475,53 @@ NODE_ENV=production
 
 ---
 
+## Landing Pages
+
+El builder soporta dos modos de generación de sitios, seleccionable desde la UI o vía API/MCP:
+
+| Modo | `siteType` | Descripción |
+|---|---|---|
+| **Sitio Completo** | `"full"` | Sitio cinematográfico con 8–12 secciones seleccionadas por IA, animaciones avanzadas, video hero |
+| **Landing Page** | `"landing"` | Página de conversión enfocada en captación de leads, con estructura fija optimizada para CTA |
+
+### Estructura de una Landing Page
+
+```
+landing-hero          → Hero con headline, subtítulo, CTA doble (primario → #lead-form, ghost → #benefits)
+                         + prueba social de avatares (pill animado)
+landing-benefits      → Grid 4 columnas con iconos SVG inline + hover lift
+landing-social-proof  → Logos de empresas (8 tiles) + stats de impacto (500+, 98%, 4.9★)
+carousel              → (solo si hay imágenes disponibles)
+flip-cards / services-grid → Servicios del negocio
+testimonials          → Reseñas de clientes
+landing-pricing       → 3 planes con card central destacada (opcional, activado por defecto)
+faq-accordion         → Preguntas frecuentes (opcional, activado por defecto)
+landing-cta-final     → Banda completa con CTA de cierre + nota de privacidad
+landing-lead-form     → Formulario 3 campos (nombre, email, mensaje) con action mailto
+landing-footer        → Footer minimalista: marca + tagline + copyright
+```
+
+### Nav de Landing
+
+Las landing pages usan `renderLandingNav()` — una barra de navegación minimalista con:
+- Logo del negocio (texto)
+- Links: Beneficios → `#benefits` | Precios → `#pricing`
+- Un único botón CTA anclado a `#lead-form`
+- Hamburger para móvil
+
+### Configuración desde el Builder
+
+En la UI del builder (`/app/builder.html`), el selector de tipo de sitio está disponible como toggle de pills:
+
+- **Sitio Completo** — activa el pipeline IA completo
+- **Landing Page** — muestra opciones adicionales: ✅ Precios, ✅ FAQ, ✅ Formulario corto
+
+### Badge en la Galería
+
+Los sitios generados como landing page muestran el badge `🎯 Landing` en las tarjetas de la galería (`/app/gallery.html`) y en el listado de sitios (`/app/index.html`).
+
+---
+
 ## Decisiones Técnicas Clave
 
 ### Generación de Prompts con IA para Imágenes y Videos
@@ -472,6 +539,10 @@ Las secciones de galería, masonry y carrusel renderizan imágenes en sus propor
 ### Scraping Social
 
 El scraper extrae nombre de perfil, bio, cantidad de seguidores, imágenes, colores, titulares, enlaces e información de contacto de Instagram, Facebook, LinkedIn, TikTok, Twitter y sitios web arbitrarios. Los colores de marca scrapeados se usan para sobreescribir el color de acento en la paleta generada.
+
+### Landing Pages — Reutilización del Sistema de Tokens
+
+En lugar de construir un sistema visual separado para landing pages, `buildLandingPlan()` llama internamente a `buildFallbackPlan()` para extraer los tokens visuales del negocio (paleta, tipografía, personalidad) y luego los aplica sobre una secuencia de secciones fija optimizada para conversión. Esto garantiza que la landing page tenga la misma identidad visual que tendría el sitio completo del mismo negocio, sin duplicar lógica de derivación de tokens.
 
 ### Integración MCP
 
@@ -567,9 +638,19 @@ El servidor MCP permite que Claude u otros LLMs consuman el builder como herrami
   "heroImageUrl": "/generations/images/abc.jpg",
   "heroVideoUrl": "/generations/videos/xyz.mp4",
   "galleryImageUrls": ["/generations/images/def.jpg"],
-  "preferredModules": []
+  "preferredModules": [],
+  "siteType": "landing",
+  "landingConfig": {
+    "goal": "Captar reservas online",
+    "ctaText": "Reservar Ahora",
+    "showPricing": true,
+    "showFaq": false,
+    "showLeadForm": true
+  }
 }
 ```
+
+> Cuando `siteType: "landing"` se bypasea el director de layout IA y se usa `buildLandingPlan()` — una secuencia fija optimizada para conversión que reutiliza el sistema de tokens visuales del negocio (paleta, tipografía, personalidad).
 
 #### `generate_site_auto` ⚡ Pipeline completo
 ```json
