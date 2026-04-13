@@ -72,7 +72,7 @@ Panel para gestionar claves API (OpenAI, Kie.ai), Token MCP, URL base del servid
 
 1. **Análisis de Marca** — Recibe nombre del negocio, tipo, mood, tema e descripción opcional o URLs sociales. Usa GPT-4o para generar copywriting (titulares, taglines, descripciones, CTAs) en español o inglés.
 2. **Scraping Social y Web** — Raspa Instagram, Facebook, LinkedIn, TikTok, Twitter y sitios web para extraer colores de marca, bio, imágenes y titulares automáticamente.
-3. **Director de Layout** — Un director de layout con IA selecciona un pipeline de secciones único (hero + 8–12 secciones) basado en la personalidad del negocio, con más de 40 tipos de secciones disponibles.
+3. **Director de Layout** — Un director de layout con IA selecciona un pipeline de secciones único (hero + 8–12 secciones) basado en la personalidad del negocio, con más de 47 tipos de secciones disponibles.
 4. **Módulos Cinematográficos** — Inyecta módulos de animación interactivos (scroll-driven, cursor/hover, click/tap, ambiente) seleccionados por la IA según industria y mood.
 5. **Generación de Imágenes con IA** — Genera imágenes hero y de galería via **nano-banana (kie.ai / Flux)** con prompts elaborados por LLM específicos a la industria, mood y estilo visual del negocio.
 6. **Generación de Video con IA** — Genera un video hero cinematográfico via **Kling 3.0 (kie.ai)** con prompts elaborados por LLM adaptados a la industria, sujeto y mood — sin plantillas genéricas.
@@ -87,7 +87,7 @@ Panel para gestionar claves API (OpenAI, Kie.ai), Token MCP, URL base del servid
 |---|---|
 | Runtime | Node.js + TypeScript |
 | Servidor | Express.js |
-| Copy con IA | OpenAI GPT-4o / GPT-4o-mini |
+| Copy con IA | OpenAI GPT-4o / GPT-4o-mini (fallback: Google Gemini) |
 | Imágenes con IA | kie.ai — `google/nano-banana` (Flux) |
 | Video con IA | kie.ai — `kling-3.0/video` (Kling AI) |
 | Scraping | Cheerio + fetch nativo |
@@ -173,7 +173,7 @@ src/
 │   ├── server.ts               # Entrada del servidor MCP
 │   └── tools.ts                # Definiciones de herramientas MCP
 ├── lib/
-│   └── openai.ts               # Cliente OpenAI (miniChat + creativeChat)
+│   └── openai.ts               # Cliente OpenAI (miniChat + creativeChat) — con fallback a Gemini
 ├── types/
 │   └── index.ts                # Interfaces TypeScript
 └── server.ts                   # Entrada de la aplicación Express
@@ -288,14 +288,17 @@ data/
 Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-OPENAI_API_KEY=sk-...         # GPT-4o para copy y generación de prompts
-KIEAI_API_KEY=...              # kie.ai para imágenes (nano-banana) y video (Kling)
-BASE_URL=https://tudominio.com # URL pública del servidor (requerida para videos)
+OPENAI_API_KEY=sk-...          # GPT-4o / GPT-4o-mini — copy, prompts y director de layout
+GOOGLE_API_KEY=AIza...         # Google Gemini — fallback cuando OpenAI no está disponible
+KIEAI_API_KEY=...              # kie.ai — imágenes (nano-banana/Flux) y video (Kling 3.0)
+BASE_URL=https://tudominio.com # URL pública del servidor (requerida para generación de video)
 PORT=3000                      # Opcional, por defecto 3000
-MCP_TOKEN=tu-token-secreto    # Opcional — protege el servidor MCP con Bearer token
+MCP_TOKEN=tu-token-secreto     # Opcional — protege el servidor MCP con Bearer token
 ```
 
-Ambas claves de API son opcionales — el builder usa plantillas determinísticas si las APIs de IA no están disponibles.
+Todas las claves de IA son opcionales — si ninguna está configurada el builder usa plantillas determinísticas para el copy. Si `OPENAI_API_KEY` no está disponible, el sistema usa automáticamente `GOOGLE_API_KEY` (Gemini) como fallback.
+
+> Obtén tu `GOOGLE_API_KEY` en [Google AI Studio](https://aistudio.google.com) de forma gratuita.
 
 > **Página de Configuración:** Puedes gestionar todas las variables de entorno directamente desde la interfaz web en `/settings.html` sin necesidad de editar archivos manualmente.
 
@@ -356,91 +359,7 @@ Accede a `http://localhost:3000` en tu navegador.
 
 ---
 
-### Instalación VPS Linux (DigitalOcean, Linode, AWS, etc.)
-
-**1. Conectarse al servidor via SSH**
-```bash
-ssh user@tu-ip-vps
-```
-
-**2. Instalar Node.js 20+ (si no está)**
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt update && sudo apt install nodejs
-node --version  # Verificar
-```
-
-**3. Clonar el repositorio**
-```bash
-cd /home/user
-git clone https://github.com/juanelot/saraviamtech-builder.git
-cd saraviamtech-builder
-```
-
-**4. Crear archivo `.env` con credenciales**
-```bash
-nano .env
-```
-Agregar:
-```env
-OPENAI_API_KEY=sk-...
-KIEAI_API_KEY=...
-PORT=3000
-NODE_ENV=production
-```
-Guardar: `Ctrl+O` → Enter → `Ctrl+X`
-
-**5. Instalar dependencias y compilar**
-```bash
-npm install
-npm run build
-```
-
-**6. Instalar PM2 (mantiene el proceso vivo)**
-```bash
-sudo npm install -g pm2
-pm2 start npm --name "saraviam-builder" -- start
-pm2 startup
-pm2 save
-```
-
-**7. (Opcional) Configurar Nginx como reverse proxy**
-```bash
-sudo apt install nginx
-sudo nano /etc/nginx/sites-available/default
-```
-
-Reemplazar el contenido con:
-```nginx
-server {
-  listen 80;
-  server_name tu-dominio.com;
-
-  location / {
-    proxy_pass http://localhost:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
-  }
-}
-```
-
-Reiniciar Nginx:
-```bash
-sudo systemctl restart nginx
-```
-
-**8. (Opcional) SSL con Let's Encrypt (HTTPS)**
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d tu-dominio.com
-```
-
----
-
-### Instalación con Docker
+### Instalación con Docker (VPS o local)
 
 **Requisitos:** Docker y Docker Compose instalados.
 
@@ -456,74 +375,55 @@ nano .env
 ```
 ```env
 OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
 KIEAI_API_KEY=...
+BASE_URL=https://tudominio.com
 PORT=3000
 NODE_ENV=production
 ```
 
 **3. Ejecutar con Docker Compose**
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
-El contenedor correrá en `http://localhost:3000`
+El contenedor correrá en `http://localhost:3000` (o en tu dominio si configuraste Traefik/proxy).
 
 **Ver logs:**
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 **Detener:**
 ```bash
-docker-compose down
+docker compose down
 ```
 
-**Archivo `Dockerfile` incluido** — se usa automáticamente con `docker-compose`.
+> El `Dockerfile` incluido compila TypeScript automáticamente durante el build — no necesitas correr `npm run build` manualmente.
 
 ---
 
-### Despliegue con Portainer
+### Despliegue con Portainer (recomendado para VPS)
 
-**1. En Portainer, ir a `Stacks` → `Add Stack`**
+La forma más sencilla de desplegar en producción con interfaz visual.
 
-**2. Seleccionar `Repository`**
+**1. En Portainer → `Stacks` → `Add Stack`**
 
-**3. Llenar:**
-- **Repository URL:** `https://github.com/juanelot/saraviamtech-builder.git`
-- **Repository reference:** `main`
-- **Compose file path:** `docker-compose.yml`
+**2. Pegar el contenido del `docker-compose.yml` o apuntar al repositorio**
 
-**4. En `Environment variables`, agregar:**
+**3. En `Environment variables` agregar:**
 ```
 OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
 KIEAI_API_KEY=...
+BASE_URL=https://tudominio.com
 PORT=3000
 NODE_ENV=production
 ```
 
-**5. Deploy**
+**4. Deploy the stack**
 
-Portainer detectará y desplegará automáticamente desde Docker Compose.
-
----
-
-### Despliegue con Dockploy
-
-**1. Crear proyecto en Dockploy**
-
-**2. Conectar repositorio GitHub:** `https://github.com/juanelot/saraviamtech-builder`
-
-**3. Seleccionar rama:** `main`
-
-**4. Agregar variables de entorno:**
-```
-OPENAI_API_KEY=sk-...
-KIEAI_API_KEY=...
-PORT=3000
-NODE_ENV=production
-```
-
-**5. Deploy** — Dockploy usará automáticamente `docker-compose.yml`
+> Para actualizar después de un cambio en el código: en Portainer ve al stack → **Update the stack** con la opción **Re-pull image** activada, o reconstruye manualmente con `docker compose up -d --build` desde el servidor.
 
 ---
 
@@ -532,10 +432,8 @@ NODE_ENV=production
 | Método | Caso de uso | Facilidad |
 |---|---|---|
 | **npm local** | Desarrollo, máquina personal | ⭐⭐⭐ |
-| **VPS manual** | Producción en servidor propio | ⭐⭐ |
-| **Docker** | Producción consistente, portátil | ⭐⭐⭐ |
-| **Portainer** | UI visual, múltiples contenedores | ⭐⭐⭐⭐ |
-| **Dockploy** | Despliegue automático desde GitHub | ⭐⭐⭐⭐⭐ |
+| **Docker** | Producción consistente, portátil | ⭐⭐⭐⭐ |
+| **Portainer** | UI visual en VPS, múltiples contenedores | ⭐⭐⭐⭐⭐ |
 
 ---
 
