@@ -315,6 +315,7 @@ apiRouter.get('/sections/:type/preview', async (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (err: any) {
+    console.error(`[preview:${req.params.type}]`, err);
     res.status(500).send(`<html><body style="font-family:sans-serif;padding:2rem;color:#f00;"><b>Error:</b> ${err.message}</body></html>`);
   }
 });

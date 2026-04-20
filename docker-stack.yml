@@ -1,0 +1,54 @@
+version: "3.7"
+
+# Stack de producción para Docker Swarm en VPS (Contabo)
+# Deploy: docker stack deploy -c docker-stack.yml saraviam
+#
+# Antes del primer deploy, crear en el VPS:
+#   mkdir -p /root/builder-data/generations /root/builder-data/uploads /root/builder-data/sites
+#   touch /root/builder-data/sites-registry.json && echo '{}' > /root/builder-data/sites-registry.json
+#   touch /root/builder-data/project.json && echo '{}' > /root/builder-data/project.json
+#
+# Las API keys se cargan desde /root/builder-data/.env en el VPS (nunca en el repo):
+#   echo "OPENAI_API_KEY=sk-..." >> /root/builder-data/.env
+#   echo "KIEAI_API_KEY=..."    >> /root/builder-data/.env
+#   echo "GOOGLE_API_KEY=..."   >> /root/builder-data/.env
+
+services:
+  saraviam_builder:
+    image: saraviamtech-builder-saraviam-builder:latest
+    networks:
+      - contabo
+    volumes:
+      - /root/builder-data/generations:/app/data/generations
+      - /root/builder-data/uploads:/app/data/uploads
+      - /root/builder-data/sites:/app/public/sites
+      - /root/builder-data/sites-registry.json:/app/data/sites-registry.json
+      - /root/builder-data/project.json:/app/data/project.json
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - BASE_URL=https://builder.saraviamtech.com
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KIEAI_API_KEY=${KIEAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.builder.rule=Host(`builder.saraviamtech.com`)
+        - traefik.http.routers.builder.entrypoints=websecure
+        - traefik.http.routers.builder.tls.certresolver=letsencryptresolver
+        - traefik.http.services.builder.loadbalancer.server.port=3000
+        - traefik.http.services.builder.loadbalancer.passHostHeader=1
+
+networks:
+  contabo:
+    external: true

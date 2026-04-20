@@ -19,6 +19,7 @@ services:
       - ./public/sites:/app/public/sites
       - ./data/project.json:/app/data/project.json
       - ./data/sites-registry.json:/app/data/sites-registry.json
+      # Nota VPS: usar rutas absolutas en el stack de Swarm, ver docker-stack.yml
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
