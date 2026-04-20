@@ -25,8 +25,14 @@ app.use('/generations', express.static(join(__dirname, '../data/generations')));
 // Serve user-uploaded assets
 app.use('/uploads', express.static(join(__dirname, '../data/uploads')));
 
-// Serve frontend app
-app.use('/', express.static(join(__dirname, '../public/app')));
+// Serve frontend app — no-cache on HTML so browsers always get the latest version
+app.use('/', express.static(join(__dirname, '../public/app'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  },
+}));
 
 app.listen(PORT, () => {
   console.log(`SaraviamTech Builder running at http://localhost:${PORT}`);
