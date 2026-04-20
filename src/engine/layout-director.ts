@@ -707,22 +707,25 @@ Return JSON exactly matching this shape:
     const fontKey: string = parsed.fontKey ?? 'syne-space';
     const fontTokens = FONT_CATALOG[fontKey] ?? FONT_CATALOG['syne-space']!;
 
+    const pt = parsed.tokens ?? {};
+    if (!pt.bg) throw new Error('parsed.tokens missing required fields');
+
     const tokens: DesignTokens = {
       ...fontTokens,
-      bg: parsed.tokens.bg,
-      surface: parsed.tokens.surface,
-      surface2: parsed.tokens.surface2,
-      accent: parsed.tokens.accent,
-      text: parsed.tokens.text,
-      muted: parsed.tokens.muted,
-      highlight: parsed.tokens.highlight ?? undefined,
-      radius: parsed.tokens.radius ?? 'md',
-      shadowStyle: parsed.tokens.shadowStyle ?? 'soft',
-      spacing: parsed.tokens.spacing ?? 'normal',
-      heroHeight: parsed.tokens.heroHeight ?? 'full',
-      grainOverlay: parsed.tokens.grainOverlay ?? false,
-      backgroundPattern: parsed.tokens.backgroundPattern ?? 'none',
-      accentGlow: parsed.tokens.accentGlow ?? false,
+      bg: pt.bg,
+      surface: pt.surface,
+      surface2: pt.surface2,
+      accent: pt.accent,
+      text: pt.text,
+      muted: pt.muted,
+      highlight: pt.highlight ?? undefined,
+      radius: pt.radius ?? 'md',
+      shadowStyle: pt.shadowStyle ?? 'soft',
+      spacing: pt.spacing ?? 'normal',
+      heroHeight: pt.heroHeight ?? 'full',
+      grainOverlay: pt.grainOverlay ?? false,
+      backgroundPattern: pt.backgroundPattern ?? 'none',
+      accentGlow: pt.accentGlow ?? false,
     };
 
     // Inject personality into every section's data for layout variant selection
