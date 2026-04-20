@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaraviamTech — Acceso</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #09090b;
+      --surface: #111114;
+      --border: rgba(255,255,255,0.07);
+      --accent: #4f46e5;
+      --text: #eae7e2;
+      --muted: #5a5a5e;
+      --error: #e85d3a;
+      --radius: 0.75rem;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .logo span { color: var(--accent); }
+    p.sub {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: -0.75rem;
+    }
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: #18181c;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="password"]:focus { border-color: var(--accent); }
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    #err {
+      color: var(--error);
+      font-size: 0.82rem;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Saraviam<span>Tech</span></div>
+    <p class="sub">Ingresa tu token de acceso para continuar</p>
+    <div>
+      <label for="token">Token de acceso</label>
+      <input type="password" id="token" placeholder="••••••••••••" autocomplete="current-password">
+    </div>
+    <p id="err">Token incorrecto. Intenta de nuevo.</p>
+    <button id="btn">Entrar</button>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const inp = document.getElementById('token');
+    const err = document.getElementById('err');
+
+    async function tryLogin() {
+      err.style.display = 'none';
+      const token = inp.value.trim();
+      if (!token) return;
+      const res = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      if (res.ok) {
+        // Server set the cookie — redirect to original destination or home
+        const params = new URLSearchParams(location.search);
+        location.href = params.get('next') || '/';
+      } else {
+        err.style.display = 'block';
+        inp.focus();
+      }
+    }
+
+    btn.addEventListener('click', tryLogin);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  </script>
+</body>
+</html>
