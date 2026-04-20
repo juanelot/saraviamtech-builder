@@ -357,6 +357,7 @@ apiRouter.post('/analyze', async (req, res) => {
 
     return res.json({ success: true, data: { brand, modules: moduleSuggestion, aiEnriched: hasOpenAI() } });
   } catch (err: any) {
+    console.error('[analyze:500]', err);
     return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
   }
 });
