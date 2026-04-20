@@ -4,17 +4,27 @@ import { hasOpenAI, creativeChat, parseJSON } from '../lib/openai.js';
 import { scrapeSocialProfile, mergeSocialSources } from './social-scraper.js';
 
 const DARK_PALETTES: Record<string, BrandCard['colors']> = {
-  'warm-night': { bg: '#09090b', surface: '#111114', accent: '#c8a97e', text: '#eae7e2', muted: '#5a5a5e' },
-  'deep-teal': { bg: '#0a0a0b', surface: '#111114', accent: '#5eadb5', text: '#eae7e2', muted: '#5a5a5e' },
-  'ember': { bg: '#09090b', surface: '#111114', accent: '#e85d3a', text: '#eae7e2', muted: '#5a5a5e' },
-  'indigo': { bg: '#09090b', surface: '#111114', accent: '#4f46e5', text: '#eae7e2', muted: '#5a5a5e' },
-  'forest': { bg: '#09090b', surface: '#111114', accent: '#4ca879', text: '#eae7e2', muted: '#5a5a5e' },
+  'warm-night':  { bg: '#09090b', surface: '#111114', accent: '#c8a97e', text: '#eae7e2', muted: '#5a5a5e' },
+  'deep-teal':   { bg: '#0a0a0b', surface: '#111114', accent: '#5eadb5', text: '#eae7e2', muted: '#5a5a5e' },
+  'ember':       { bg: '#09090b', surface: '#111114', accent: '#e85d3a', text: '#eae7e2', muted: '#5a5a5e' },
+  'indigo':      { bg: '#09090b', surface: '#111114', accent: '#4f46e5', text: '#eae7e2', muted: '#5a5a5e' },
+  'forest':      { bg: '#09090b', surface: '#111114', accent: '#4ca879', text: '#eae7e2', muted: '#5a5a5e' },
+  'rose':        { bg: '#0d090b', surface: '#15100e', accent: '#e0607e', text: '#eae7e2', muted: '#5a5a5e' },
+  'amber':       { bg: '#0c0900', surface: '#141100', accent: '#f59e0b', text: '#eae7e2', muted: '#5a5a5e' },
+  'violet':      { bg: '#09090d', surface: '#111118', accent: '#8b5cf6', text: '#eae7e2', muted: '#5a5a5e' },
+  'cyan':        { bg: '#090b0d', surface: '#11151a', accent: '#06b6d4', text: '#eae7e2', muted: '#5a5a5e' },
+  'slate-gold':  { bg: '#0b0c10', surface: '#14151c', accent: '#d4af37', text: '#eae7e2', muted: '#5a5a5e' },
 };
 
 const LIGHT_PALETTES: Record<string, BrandCard['colors']> = {
-  'cream': { bg: '#f5f3ef', surface: '#ffffff', accent: '#4f46e5', text: '#1a1a1f', muted: '#6b6b73' },
-  'warm-ivory': { bg: '#fafaf8', surface: '#ffffff', accent: '#e85d3a', text: '#1a1a1f', muted: '#6b6b73' },
-  'cool-gray': { bg: '#fafafa', surface: '#ffffff', accent: '#5eadb5', text: '#1a1a1f', muted: '#6b6b73' },
+  'cream':       { bg: '#f5f3ef', surface: '#ffffff', accent: '#4f46e5', text: '#1a1a1f', muted: '#6b6b73' },
+  'warm-ivory':  { bg: '#fafaf8', surface: '#ffffff', accent: '#e85d3a', text: '#1a1a1f', muted: '#6b6b73' },
+  'cool-gray':   { bg: '#fafafa', surface: '#ffffff', accent: '#5eadb5', text: '#1a1a1f', muted: '#6b6b73' },
+  'blush':       { bg: '#fdf4f5', surface: '#ffffff', accent: '#e0607e', text: '#1a1a1f', muted: '#6b6b73' },
+  'sage':        { bg: '#f4f7f4', surface: '#ffffff', accent: '#4ca879', text: '#1a1a1f', muted: '#6b6b73' },
+  'sand':        { bg: '#faf8f3', surface: '#ffffff', accent: '#d4af37', text: '#1a1a1f', muted: '#6b6b73' },
+  'lavender':    { bg: '#f7f5fc', surface: '#ffffff', accent: '#8b5cf6', text: '#1a1a1f', muted: '#6b6b73' },
+  'sky':         { bg: '#f3fafc', surface: '#ffffff', accent: '#06b6d4', text: '#1a1a1f', muted: '#6b6b73' },
 };
 
 const FONTS: Record<string, BrandCard['font']> = {
@@ -1151,51 +1161,51 @@ function selectPalette(businessType: BusinessType, mood: Mood, theme: 'dark' | '
 
   // 1:N — each type has 2-3 palette options; seed picks among them
   const darkMap: Record<string, string[]> = {
-    'restaurant-food':      ['warm-night', 'ember', 'forest'],
-    'luxury-jewelry':       ['warm-night', 'deep-teal', 'indigo'],
-    'saas-tech':            ['indigo', 'deep-teal', 'ember'],
-    'agency-studio':        ['ember', 'indigo', 'deep-teal'],
-    'portfolio-creative':   ['deep-teal', 'ember', 'forest'],
-    'fitness-health':       ['forest', 'ember', 'indigo'],
-    'auto-detailing':       ['ember', 'deep-teal', 'warm-night'],
-    'ecommerce':            ['deep-teal', 'indigo', 'ember'],
-    'real-estate':          ['indigo', 'warm-night', 'deep-teal'],
-    'professional-services':['deep-teal', 'indigo', 'forest'],
-    'music-events':         ['ember', 'indigo', 'deep-teal'],
-    'education':            ['indigo', 'forest', 'deep-teal'],
-    'beauty-salon':         ['ember', 'warm-night', 'indigo'],
-    'legal-finance':        ['deep-teal', 'indigo', 'warm-night'],
-    'construction':         ['ember', 'deep-teal', 'forest'],
-    'pet-services':         ['forest', 'deep-teal', 'warm-night'],
-    'nonprofit':            ['forest', 'indigo', 'deep-teal'],
-    'photography':          ['warm-night', 'deep-teal', 'ember'],
-    'travel-tourism':       ['deep-teal', 'forest', 'indigo'],
-    'gaming-esports':       ['indigo', 'ember', 'deep-teal'],
-    'other':                ['indigo', 'ember', 'deep-teal'],
+    'restaurant-food':      ['warm-night', 'ember', 'forest', 'amber', 'rose'],
+    'luxury-jewelry':       ['warm-night', 'slate-gold', 'indigo', 'deep-teal', 'violet'],
+    'saas-tech':            ['indigo', 'deep-teal', 'cyan', 'violet', 'ember'],
+    'agency-studio':        ['ember', 'violet', 'indigo', 'deep-teal', 'rose'],
+    'portfolio-creative':   ['deep-teal', 'violet', 'ember', 'forest', 'cyan'],
+    'fitness-health':       ['forest', 'ember', 'indigo', 'cyan', 'amber'],
+    'auto-detailing':       ['ember', 'deep-teal', 'warm-night', 'indigo', 'slate-gold'],
+    'ecommerce':            ['deep-teal', 'indigo', 'violet', 'ember', 'rose'],
+    'real-estate':          ['indigo', 'warm-night', 'slate-gold', 'deep-teal', 'violet'],
+    'professional-services':['deep-teal', 'indigo', 'forest', 'cyan', 'slate-gold'],
+    'music-events':         ['ember', 'violet', 'rose', 'indigo', 'deep-teal'],
+    'education':            ['indigo', 'forest', 'cyan', 'deep-teal', 'amber'],
+    'beauty-salon':         ['rose', 'ember', 'warm-night', 'violet', 'indigo'],
+    'legal-finance':        ['deep-teal', 'indigo', 'slate-gold', 'warm-night', 'cyan'],
+    'construction':         ['ember', 'amber', 'deep-teal', 'forest', 'slate-gold'],
+    'pet-services':         ['forest', 'deep-teal', 'warm-night', 'cyan', 'amber'],
+    'nonprofit':            ['forest', 'indigo', 'cyan', 'deep-teal', 'ember'],
+    'photography':          ['warm-night', 'deep-teal', 'slate-gold', 'ember', 'violet'],
+    'travel-tourism':       ['deep-teal', 'forest', 'cyan', 'indigo', 'amber'],
+    'gaming-esports':       ['indigo', 'violet', 'ember', 'rose', 'deep-teal'],
+    'other':                ['indigo', 'ember', 'deep-teal', 'forest', 'violet'],
   };
 
   const lightMap: Record<string, string[]> = {
-    'restaurant-food':      ['warm-ivory', 'cream', 'cool-gray'],
-    'luxury-jewelry':       ['cream', 'warm-ivory', 'cool-gray'],
-    'saas-tech':            ['cool-gray', 'cream', 'warm-ivory'],
-    'agency-studio':        ['warm-ivory', 'cool-gray', 'cream'],
-    'portfolio-creative':   ['cream', 'cool-gray', 'warm-ivory'],
-    'fitness-health':       ['cool-gray', 'warm-ivory', 'cream'],
-    'auto-detailing':       ['warm-ivory', 'cool-gray', 'cream'],
-    'ecommerce':            ['cream', 'warm-ivory', 'cool-gray'],
-    'real-estate':          ['cream', 'cool-gray', 'warm-ivory'],
-    'professional-services':['cool-gray', 'cream', 'warm-ivory'],
-    'music-events':         ['warm-ivory', 'cream', 'cool-gray'],
-    'education':            ['cool-gray', 'warm-ivory', 'cream'],
-    'beauty-salon':         ['cream', 'warm-ivory', 'cool-gray'],
-    'legal-finance':        ['cool-gray', 'cream', 'warm-ivory'],
-    'construction':         ['warm-ivory', 'cool-gray', 'cream'],
-    'pet-services':         ['cream', 'warm-ivory', 'cool-gray'],
-    'nonprofit':            ['cool-gray', 'cream', 'warm-ivory'],
-    'photography':          ['cream', 'cool-gray', 'warm-ivory'],
-    'travel-tourism':       ['cool-gray', 'warm-ivory', 'cream'],
-    'gaming-esports':       ['cool-gray', 'cream', 'warm-ivory'],
-    'other':                ['cool-gray', 'cream', 'warm-ivory'],
+    'restaurant-food':      ['warm-ivory', 'sand', 'cream', 'sage', 'blush'],
+    'luxury-jewelry':       ['cream', 'sand', 'lavender', 'warm-ivory', 'blush'],
+    'saas-tech':            ['cool-gray', 'sky', 'cream', 'lavender', 'warm-ivory'],
+    'agency-studio':        ['warm-ivory', 'blush', 'lavender', 'cool-gray', 'cream'],
+    'portfolio-creative':   ['cream', 'lavender', 'sky', 'warm-ivory', 'blush'],
+    'fitness-health':       ['cool-gray', 'sage', 'sky', 'warm-ivory', 'cream'],
+    'auto-detailing':       ['warm-ivory', 'cool-gray', 'sand', 'cream', 'sky'],
+    'ecommerce':            ['cream', 'blush', 'lavender', 'warm-ivory', 'cool-gray'],
+    'real-estate':          ['cream', 'sand', 'cool-gray', 'lavender', 'warm-ivory'],
+    'professional-services':['cool-gray', 'cream', 'sky', 'warm-ivory', 'sand'],
+    'music-events':         ['warm-ivory', 'blush', 'lavender', 'cream', 'cool-gray'],
+    'education':            ['cool-gray', 'sky', 'lavender', 'warm-ivory', 'cream'],
+    'beauty-salon':         ['blush', 'cream', 'lavender', 'warm-ivory', 'sand'],
+    'legal-finance':        ['cool-gray', 'cream', 'sand', 'warm-ivory', 'sky'],
+    'construction':         ['warm-ivory', 'sand', 'cool-gray', 'cream', 'sage'],
+    'pet-services':         ['sage', 'cream', 'sky', 'warm-ivory', 'blush'],
+    'nonprofit':            ['sage', 'cool-gray', 'cream', 'sky', 'warm-ivory'],
+    'photography':          ['cream', 'cool-gray', 'sand', 'lavender', 'warm-ivory'],
+    'travel-tourism':       ['sky', 'sage', 'cool-gray', 'warm-ivory', 'cream'],
+    'gaming-esports':       ['lavender', 'cool-gray', 'blush', 'cream', 'sky'],
+    'other':                ['cool-gray', 'cream', 'warm-ivory', 'lavender', 'sage'],
   };
 
   const map = theme === 'dark' ? darkMap : lightMap;
@@ -1235,9 +1245,12 @@ export async function analyzeBrand(
   const font = selectFont(businessType, mood, effectiveSeed);
   const templates = language === 'es' ? COPY_TEMPLATES_ES : COPY_TEMPLATES;
   const variants = templates[businessType] ?? templates['other'] ?? [];
-  const copyFn = seedPick(variants, effectiveSeed) ?? templates['other']![0]!;
-  console.log('[brand-analyzer] businessType:', businessType, 'variants.length:', variants.length, 'copyFn type:', typeof copyFn);
-  if (typeof copyFn !== 'function') throw new Error(`copyFn is not a function (type: ${typeof copyFn}, businessType: ${businessType})`);
+  const copyFn = variants.length > 0 ? seedPick(variants, effectiveSeed) : templates['other']![0]!;
+  if (typeof copyFn !== 'function') {
+    const fallback = templates['other']![0]!;
+    if (typeof fallback !== 'function') throw new Error('No valid copy template found');
+    return { name: businessName, slug, industry: businessType.replace(/-/g, ' '), businessType, mood, theme, language, colors, font, copy: fallback(businessName), sourceUrl, socialData: undefined };
+  }
   const copy = copyFn(businessName);
 
   if (description) {
@@ -1297,7 +1310,14 @@ export async function analyzeBrand(
         effectiveSeed,
       );
       const parsed = parseJSON<typeof copy>(enriched);
-      Object.assign(copy, parsed);
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.headline === 'string') copy.headline = parsed.headline;
+        if (typeof parsed.tagline === 'string') copy.tagline = parsed.tagline;
+        if (typeof parsed.heroLine === 'string') copy.heroLine = parsed.heroLine;
+        if (typeof parsed.description === 'string') copy.description = parsed.description;
+        if (Array.isArray(parsed.services) && parsed.services.every((s: unknown) => typeof s === 'string')) copy.services = parsed.services;
+        if (typeof parsed.cta === 'string') copy.cta = parsed.cta;
+      }
     } catch {
       // Keep deterministic copy on failure
     }
