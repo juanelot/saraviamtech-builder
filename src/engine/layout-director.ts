@@ -285,7 +285,7 @@ const FONT_CATALOG: Record<string, Pick<DesignTokens, 'displayFont' | 'bodyFont'
 
 // Seed-based picker for layout director
 function ldSeedPick<T>(arr: T[], seed: number): T {
-  return arr[seed % arr.length]!;
+  return arr[Math.abs(seed) % arr.length]!;
 }
 
 function buildFallbackPlan(brand: BrandCard, imageCount: number, seed: number = Date.now()): LayoutPlan {
