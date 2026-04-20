@@ -324,8 +324,12 @@ apiRouter.get('/sections/:type/preview', async (req, res) => {
 apiRouter.post('/analyze', async (req, res) => {
   try {
     const { businessName, businessType, mood, theme, description, sourceUrl, language, socialUrls, seed: reqSeed } = req.body;
+    console.log('[analyze]', JSON.stringify({ businessName, businessType, mood, theme, language }));
+    if (!businessName || !businessType) {
+      return res.status(400).json({ success: false, error: 'Missing businessName or businessType' });
+    }
     const analysisSeed = reqSeed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
-    const brand = await analyzeBrand(businessName, businessType, mood, theme, description, sourceUrl, language ?? 'es', socialUrls, analysisSeed);
+    const brand = await analyzeBrand(businessName, businessType, mood ?? 'bold', theme ?? 'dark', description, sourceUrl, language ?? 'es', socialUrls, analysisSeed);
 
     // Copy enrichment already handled inside analyzeBrand — skip duplicate call here
 

@@ -1234,8 +1234,8 @@ export async function analyzeBrand(
   const colors = selectPalette(businessType, mood, theme, effectiveSeed);
   const font = selectFont(businessType, mood, effectiveSeed);
   const templates = language === 'es' ? COPY_TEMPLATES_ES : COPY_TEMPLATES;
-  const variants = templates[businessType] ?? templates['other'];
-  const copyFn = seedPick(variants, effectiveSeed);
+  const variants = templates[businessType] ?? templates['other'] ?? [];
+  const copyFn = seedPick(variants, effectiveSeed) ?? templates['other']![0]!;
   const copy = copyFn(businessName);
 
   if (description) {
