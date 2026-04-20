@@ -12,6 +12,7 @@ version: "3.7"
 #   echo "OPENAI_API_KEY=sk-..." >> /root/builder-data/.env
 #   echo "KIEAI_API_KEY=..."    >> /root/builder-data/.env
 #   echo "GOOGLE_API_KEY=..."   >> /root/builder-data/.env
+#   echo "ACCESS_TOKEN=..."     >> /root/builder-data/.env
 
 services:
   saraviam_builder:
@@ -31,6 +32,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - KIEAI_API_KEY=${KIEAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ACCESS_TOKEN=${ACCESS_TOKEN}
     deploy:
       mode: replicated
       replicas: 1
