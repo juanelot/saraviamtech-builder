@@ -1246,6 +1246,7 @@ export async function analyzeBrand(
   const templates = language === 'es' ? COPY_TEMPLATES_ES : COPY_TEMPLATES;
   const variants = templates[businessType] ?? templates['other'] ?? [];
   const copyFn = variants.length > 0 ? seedPick(variants, effectiveSeed) : templates['other']![0]!;
+  console.log('[brand-analyzer:copy] businessType:', businessType, 'language:', language, 'variants.length:', variants.length, 'effectiveSeed%len:', effectiveSeed % (variants.length || 1), 'typeof copyFn:', typeof copyFn);
   if (typeof copyFn !== 'function') {
     const fallback = templates['other']![0]!;
     if (typeof fallback !== 'function') throw new Error('No valid copy template found');
