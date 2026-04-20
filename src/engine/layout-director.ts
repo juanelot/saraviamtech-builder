@@ -336,9 +336,9 @@ function buildFallbackPlan(brand: BrandCard, imageCount: number, seed: number = 
     'gradient-flow':      ['raleway-nunito', 'bricolage-figtree', 'chillax-epilogue'],
   };
 
-  const fontOptions = fontMap[personality];
+  const fontOptions = fontMap[personality] ?? ['syne-space'];
   const fontKey = ldSeedPick(fontOptions, seed + 7); // offset seed so font != palette pick
-  const fontTokens = FONT_CATALOG[fontKey]!;
+  const fontTokens = FONT_CATALOG[fontKey] ?? FONT_CATALOG['syne-space']!;
 
   const tokens: DesignTokens = {
     ...fontTokens,
