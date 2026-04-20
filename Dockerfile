@@ -44,8 +44,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/login.html', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
 # Iniciar aplicación
 CMD ["node", "dist/server.js"]
