@@ -1236,6 +1236,8 @@ export async function analyzeBrand(
   const templates = language === 'es' ? COPY_TEMPLATES_ES : COPY_TEMPLATES;
   const variants = templates[businessType] ?? templates['other'] ?? [];
   const copyFn = seedPick(variants, effectiveSeed) ?? templates['other']![0]!;
+  console.log('[brand-analyzer] businessType:', businessType, 'variants.length:', variants.length, 'copyFn type:', typeof copyFn);
+  if (typeof copyFn !== 'function') throw new Error(`copyFn is not a function (type: ${typeof copyFn}, businessType: ${businessType})`);
   const copy = copyFn(businessName);
 
   if (description) {
