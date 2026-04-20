@@ -324,17 +324,20 @@ apiRouter.get('/sections/:type/preview', async (req, res) => {
 apiRouter.post('/analyze', async (req, res) => {
   try {
     const { businessName, businessType, mood, theme, description, sourceUrl, language, socialUrls, seed: reqSeed } = req.body;
-    console.log('[analyze]', JSON.stringify({ businessName, businessType, mood, theme, language }));
+    console.log('[analyze:1] start', JSON.stringify({ businessName, businessType, mood, theme, language }));
     if (!businessName || !businessType) {
       return res.status(400).json({ success: false, error: 'Missing businessName or businessType' });
     }
     const analysisSeed = reqSeed ?? (Date.now() ^ Math.floor(Math.random() * 0xffff));
+    console.log('[analyze:2] calling analyzeBrand');
     const brand = await analyzeBrand(businessName, businessType, mood ?? 'bold', theme ?? 'dark', description, sourceUrl, language ?? 'es', socialUrls, analysisSeed);
+    console.log('[analyze:3] analyzeBrand done');
 
     // Copy enrichment already handled inside analyzeBrand — skip duplicate call here
 
     // Suggest modules with gpt-4o-mini if available
     let moduleSuggestion = pickModules(businessType, undefined);
+    console.log('[analyze:4] picking modules, hasOpenAI:', hasOpenAI());
     if (hasOpenAI()) {
       try {
         const moduleIds = MODULES.map(m => `${m.id}:${m.name}(${m.category})`).join(', ');
@@ -350,11 +353,12 @@ apiRouter.post('/analyze', async (req, res) => {
         if (p) {
           moduleSuggestion = { primary: p, secondary: s, tertiary: t, reasoning: picked.reasoning };
         }
-      } catch {
-        // keep deterministic suggestion
+      } catch (modErr: any) {
+        console.error('[analyze:module-err]', modErr.message);
       }
     }
 
+    console.log('[analyze:5] sending response');
     return res.json({ success: true, data: { brand, modules: moduleSuggestion, aiEnriched: hasOpenAI() } });
   } catch (err: any) {
     console.error('[analyze:500]', err);

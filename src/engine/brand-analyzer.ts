@@ -1293,8 +1293,10 @@ export async function analyzeBrand(
   }
 
   // Enrich copy with OpenAI in the correct language if available
+  console.log('[brand-analyzer:llm] hasOpenAI:', hasOpenAI());
   if (hasOpenAI()) {
     try {
+      console.log('[brand-analyzer:llm] calling creativeChat');
       const langInstruction = language === 'es'
         ? 'Escribe TODO el copy en ESPAÑOL. No uses inglés en ningún campo.'
         : 'Write ALL copy in ENGLISH.';
@@ -1309,6 +1311,7 @@ export async function analyzeBrand(
         `Business: "${businessName}". Type: ${businessType}. Mood: ${mood}. Theme: ${theme}. Variation seed: ${effectiveSeed % 1000}.${description ? ` Context: ${description}` : ''}${socialContext}\n\nWrite compelling copy. Keep it concise and match the tone. Make it distinct from typical ${businessType} websites.`,
         effectiveSeed,
       );
+      console.log('[brand-analyzer:llm] creativeChat done, parsing');
       const parsed = parseJSON<typeof copy>(enriched);
       if (parsed && typeof parsed === 'object') {
         if (typeof parsed.headline === 'string') copy.headline = parsed.headline;
@@ -1318,8 +1321,8 @@ export async function analyzeBrand(
         if (Array.isArray(parsed.services) && parsed.services.every((s: unknown) => typeof s === 'string')) copy.services = parsed.services;
         if (typeof parsed.cta === 'string') copy.cta = parsed.cta;
       }
-    } catch {
-      // Keep deterministic copy on failure
+    } catch (llmErr: any) {
+      console.error('[brand-analyzer:llm-err]', llmErr.message);
     }
   }
 
