@@ -1153,7 +1153,7 @@ const COPY_TEMPLATES: Record<BusinessType, CopyVariant[]> = {
 
 // Seed-based picker: selects deterministically from array using a numeric seed
 function seedPick<T>(arr: T[], seed: number): T {
-  return arr[seed % arr.length]!;
+  return arr[Math.abs(seed) % arr.length]!;
 }
 
 function selectPalette(businessType: BusinessType, mood: Mood, theme: 'dark' | 'light', seed: number): BrandCard['colors'] {
