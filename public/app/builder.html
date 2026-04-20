@@ -1,7 +1,9 @@
+<!-- BUILD:2026-04-20T01 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <script>console.log('[builder] build=2026-04-20T01');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Builder</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -1360,15 +1362,28 @@ $('btn-analyze').addEventListener('click', async () => {
       socialUrls: state.socialUrls.length ? state.socialUrls : undefined,
     });
 
-    if (!r.success) throw new Error(r.error);
+    if (!r.success) throw new Error(r.error ?? 'Analyze failed');
 
-    state.brand   = r.data.brand;
+    // Defensive validation — catch malformed response before it crashes renderBrandPanel
+    const brand = r.data?.brand;
+    if (!brand)               throw new Error('Respuesta inválida: falta data.brand');
+    if (!brand.colors)        throw new Error('Respuesta inválida: falta brand.colors');
+    if (!brand.colors.bg)     throw new Error('Respuesta inválida: falta brand.colors.bg');
+    if (!brand.colors.surface)throw new Error('Respuesta inválida: falta brand.colors.surface');
+    if (!brand.colors.accent) throw new Error('Respuesta inválida: falta brand.colors.accent');
+    if (!brand.colors.text)   throw new Error('Respuesta inválida: falta brand.colors.text');
+    if (!brand.colors.muted)  throw new Error('Respuesta inválida: falta brand.colors.muted');
+    if (!brand.font)          throw new Error('Respuesta inválida: falta brand.font');
+    if (!brand.copy)          throw new Error('Respuesta inválida: falta brand.copy');
+
+    state.brand   = brand;
     state.modules = r.data.modules;
     state.aiEnriched = r.data.aiEnriched;
 
     renderBrandPanel();
     setStep(2);
   } catch (e) {
+    console.error('[analyze] Error completo:', e);
     alert('Error: ' + e.message);
   } finally {
     setLoading('btn-analyze', 'spin-analyze', false);
