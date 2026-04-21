@@ -32,7 +32,7 @@ export function renderGalleryMasonry(
       <h2 style="font-family:'${tokens.displayFont}',serif;font-size:clamp(2rem,5vw,3rem);font-weight:900;color:${tokens.text};text-transform:uppercase;letter-spacing:-0.03em;">${t('label.gallery', brand.language)}</h2>
       <span style="font-size:0.75rem;font-weight:700;color:${tokens.accent};letter-spacing:0.12em;text-transform:uppercase;">${images.length} IMG</span>
     </div>`, 'fadeUp', 0)}
-    <div style="columns:3;column-gap:2px;">
+    <div style="columns:3;column-gap:2px;" class="masonry-cols">
       ${imgHtml}
     </div>
   </div>
@@ -52,7 +52,7 @@ ${lightboxScript('masonry')}`;
       ${sectionLabel(tokens, t('label.gallery', brand.language))}
       <h2 style="font-family:'${tokens.displayFont}',serif;font-size:clamp(1.75rem,4vw,2.75rem);font-weight:400;font-style:italic;color:${tokens.text};letter-spacing:-0.03em;">${brand.copy.tagline}</h2>
     </div>`, 'fadeUp', 0)}
-    <div style="columns:3;column-gap:1.25rem;">
+    <div style="columns:3;column-gap:1.25rem;" class="masonry-cols">
       ${imgHtml}
     </div>
   </div>
@@ -75,7 +75,7 @@ ${lightboxScript('masonry')}`;
       </div>
       <span style="font-size:0.8rem;color:${tokens.muted};">${images.length} ${brand.language === 'es' ? 'imágenes' : 'images'}</span>
     </div>`, 'fadeUp', 0)}
-    <div style="columns:3;column-gap:1rem;">
+    <div style="columns:3;column-gap:1rem;" class="masonry-cols">
       ${imgHtml}
     </div>
   </div>
@@ -85,6 +85,10 @@ ${lightboxScript('masonry')}`;
 
 function lightboxScript(prefix: string): string {
   return `
+<style>
+@media (max-width:600px) { .masonry-cols { columns:1 !important; } }
+@media (min-width:601px) and (max-width:900px) { .masonry-cols { columns:2 !important; } }
+</style>
 <script>
 (function(){
   function openLightbox(src) {
