@@ -1,9 +1,9 @@
-<!-- BUILD:2026-04-20T01 -->
+<!-- BUILD:2026-04-21T01 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <script>console.log('[builder] build=2026-04-20T01');</script>
+  <script>console.log('[builder] build=2026-04-21T01');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Builder</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -1154,13 +1154,15 @@ function setStep(n) {
   document.querySelectorAll('.step-panel').forEach(el => el.classList.add('hidden'));
   show(n);
   $('sidebar-step-badge').textContent = `${n}/5`;
-  // Force instant scroll to top — override CSS scroll-behavior:smooth
-  const prev = document.documentElement.style.scrollBehavior;
-  document.documentElement.style.scrollBehavior = 'auto';
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-  window.scrollTo(0, 0);
-  requestAnimationFrame(() => { document.documentElement.style.scrollBehavior = prev; });
+  // Scroll after browser paints the newly visible panel (double rAF ensures layout is settled)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  });
 }
 
 function setLoading(btnId, spinId, loading) {
