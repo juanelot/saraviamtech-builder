@@ -1,9 +1,9 @@
-<!-- BUILD:2026-04-21T01 -->
+<!-- BUILD:2026-04-21T02 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <script>console.log('[builder] build=2026-04-21T01');</script>
+  <script>console.log('[builder] build=2026-04-21T02');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Builder</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -53,7 +53,8 @@
     .layout {
       display: grid;
       grid-template-columns: 240px 1fr;
-      min-height: 100dvh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     /* ── Sidebar ── */
@@ -136,7 +137,7 @@
     }
 
     /* ── Main ── */
-    .main { padding: 2rem 2.5rem; max-width: 900px; }
+    .main { padding: 2rem 2.5rem; max-width: 900px; height: 100dvh; overflow-y: auto; }
 
     .page-header { margin-bottom: 2rem; }
     .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
@@ -545,12 +546,12 @@
     @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr !important; }
       .sidebar { display: none !important; }
-      .main { padding: 1.25rem !important; padding-top: 5rem !important; }
+      .main { padding: 1.25rem !important; padding-top: 5rem !important; height: 100dvh !important; overflow-y: auto !important; }
       .mob-header { display: flex !important; }
       .form-row, .form-grid, .image-grid, .video-grid { grid-template-columns: 1fr !important; }
     }
     @media (max-width: 480px) {
-      .main { padding: 0.875rem !important; padding-top: 4.75rem !important; }
+      .main { padding: 0.875rem !important; padding-top: 4.75rem !important; height: 100dvh !important; overflow-y: auto !important; }
     }
   </style>
 </head>
@@ -1154,13 +1155,11 @@ function setStep(n) {
   document.querySelectorAll('.step-panel').forEach(el => el.classList.add('hidden'));
   show(n);
   $('sidebar-step-badge').textContent = `${n}/5`;
-  // Scroll after browser paints the newly visible panel (double rAF ensures layout is settled)
+  // Scroll the main content area to top after paint
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      document.documentElement.style.scrollBehavior = 'auto';
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      const main = document.querySelector('.main');
+      if (main) main.scrollTop = 0;
     });
   });
 }
