@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
+dotenvConfig({ override: true });
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import { join, dirname } from 'path';

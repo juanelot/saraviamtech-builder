@@ -20,6 +20,7 @@ services:
     networks:
       - contabo
     volumes:
+      - /root/builder-data/.env:/app/.env
       - /root/builder-data/generations:/app/data/generations
       - /root/builder-data/uploads:/app/data/uploads
       - /root/builder-data/sites:/app/public/sites
