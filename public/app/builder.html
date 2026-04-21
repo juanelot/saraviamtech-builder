@@ -1154,7 +1154,13 @@ function setStep(n) {
   document.querySelectorAll('.step-panel').forEach(el => el.classList.add('hidden'));
   show(n);
   $('sidebar-step-badge').textContent = `${n}/5`;
+  // Force instant scroll to top — override CSS scroll-behavior:smooth
+  const prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
   window.scrollTo(0, 0);
+  requestAnimationFrame(() => { document.documentElement.style.scrollBehavior = prev; });
 }
 
 function setLoading(btnId, spinId, loading) {
