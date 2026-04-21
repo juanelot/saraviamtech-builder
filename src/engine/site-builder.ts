@@ -366,7 +366,7 @@ export async function buildSite(
 
   // Template mode: inject brand into a chosen cinematic module, skip Layout Director
   if (siteType === 'template' && templateModuleId) {
-    return buildFromTemplate(brand, templateModuleId);
+    return buildFromTemplate(brand, templateModuleId, heroImageUrl, heroVideoUrl);
   }
 
   // 1. Optionally scrape source URL for extra context
