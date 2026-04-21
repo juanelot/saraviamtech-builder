@@ -167,7 +167,6 @@ function injectSaraviamMeta(html: string): string {
 }
 
 function injectHeroVideo(html: string, videoUrl: string): string {
-  // Insert a full-screen video behind the hero section
   const videoTag = `
 <style>
 #sc-hero-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-1;opacity:0.55;}
@@ -176,11 +175,13 @@ function injectHeroVideo(html: string, videoUrl: string): string {
   return html.replace('<body>', `<body>${videoTag}`);
 }
 
-function injectHeroImage(html: string, imageUrl: string): string {
-  // Replace first Unsplash/placeholder background-image with user's hero image
+// Replace all Unsplash URLs in module HTML with user images (rotating through available ones)
+function replaceModuleImages(html: string, images: string[]): string {
+  if (!images.length) return html;
+  let idx = 0;
   return html.replace(
-    /background(?:-image)?\s*:\s*url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)[^;]*/,
-    `background-image: url('${imageUrl}'); background-size: cover; background-position: center`
+    /https:\/\/images\.unsplash\.com\/[^'")\s]+/g,
+    () => images[idx++ % images.length]
   );
 }
 
@@ -189,6 +190,7 @@ export function buildFromTemplate(
   moduleId: string,
   heroImageUrl?: string,
   heroVideoUrl?: string,
+  extraImages?: string[],
 ): string {
   const filePath = join(MODULES_DIR, `${moduleId}.html`);
   let html: string;
@@ -213,9 +215,10 @@ export function buildFromTemplate(
   html = injectSaraviamMeta(html);
   html = injectGoogleFont(html, brand);
 
-  // 4. Media injection
+  // 4. Media injection — replace all Unsplash images with user's images, then add video
+  const allImages = [heroImageUrl, ...(extraImages ?? [])].filter(Boolean) as string[];
+  if (allImages.length) html = replaceModuleImages(html, allImages);
   if (heroVideoUrl) html = injectHeroVideo(html, heroVideoUrl);
-  else if (heroImageUrl) html = injectHeroImage(html, heroImageUrl);
 
   // 5. Footer
   html = appendFooter(html, brand);
