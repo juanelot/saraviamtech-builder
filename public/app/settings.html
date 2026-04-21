@@ -202,6 +202,10 @@
   <div class="sidebar-section" style="margin-top:auto;">
     <div class="sidebar-label">Acciones</div>
     <a href="/builder.html" class="nav-item" style="color:var(--accent);">✦ Nuevo sitio</a>
+    <button class="nav-item" onclick="logout()" style="color:var(--error);margin-top:0.5rem;">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>
+      Cerrar sesión
+    </button>
   </div>
 </aside>
 
@@ -569,6 +573,7 @@
 <script>
 function openMobDrawer() { document.getElementById('mob-drawer').classList.add('open'); document.getElementById('mob-overlay').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeMobDrawer() { document.getElementById('mob-drawer').classList.remove('open'); document.getElementById('mob-overlay').classList.remove('open'); document.body.style.overflow=''; }
+async function logout() { await fetch('/api/auth/logout', { method: 'POST' }); location.href = '/login.html'; }
 </script>
 </body>
 </html>

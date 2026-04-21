@@ -43,7 +43,13 @@ app.post('/api/auth/verify', (req: Request, res: Response) => {
   }
 });
 
-// ── Auth guard — protects frontend HTML + API (except /api/auth/verify) ────
+// POST /api/auth/logout — clears the access cookie
+app.post('/api/auth/logout', (_req: Request, res: Response) => {
+  res.setHeader('Set-Cookie', 'st_access=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+  res.json({ ok: true });
+});
+
+// ── Auth guard — protects frontend HTML + API (except /api/auth/) ────────────
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Public paths: login page, its assets, generated sites, verify endpoint already handled above
