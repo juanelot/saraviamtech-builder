@@ -8,6 +8,7 @@
  * Falls back to a deterministic plan (no OpenAI needed) when AI is unavailable.
  */
 import type { BrandCard, ModuleSelection, SiteType, LandingConfig } from '../types/index.js';
+import { buildFromTemplate } from './template-injector.js';
 import { buildLayoutPlan, buildLandingPlan, type LayoutPlan, type DesignTokens, type SectionPlan } from './layout-director.js';
 import { scrapeUrl } from './scraper.js';
 
@@ -358,9 +359,15 @@ export async function buildSite(
   customSections?: string[],    // optional override: ordered list of section types
   noAI?: boolean,               // skip LLM, use deterministic fallback (for previews)
   seed?: number,
-  siteType?: SiteType,          // 'full' (default) or 'landing'
+  siteType?: SiteType,          // 'full' (default) | 'landing' | 'template'
   landingConfig?: LandingConfig,
+  templateModuleId?: string,    // module id when siteType === 'template'
 ): Promise<string> {
+
+  // Template mode: inject brand into a chosen cinematic module, skip Layout Director
+  if (siteType === 'template' && templateModuleId) {
+    return buildFromTemplate(brand, templateModuleId);
+  }
 
   // 1. Optionally scrape source URL for extra context
   let scrapedData: { headlines?: string[]; colors?: string[]; images?: string[] } | undefined;

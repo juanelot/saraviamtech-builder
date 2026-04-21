@@ -10,6 +10,7 @@ import type { CreateSiteRequest, ApiResponse, GeneratedSite } from '../types/ind
 import { analyzeBrand } from '../engine/brand-analyzer.js';
 import { pickModules, MODULES } from '../engine/module-picker.js';
 import { buildSite } from '../engine/site-builder.js';
+import { listModules } from '../engine/template-injector.js';
 import { publishSite, loadRegistry, saveRegistry, deleteSite } from '../engine/publisher.js';
 import { scrapeUrl } from '../engine/scraper.js';
 import { scrapeSocialProfile, mergeSocialSources } from '../engine/social-scraper.js';
@@ -109,7 +110,7 @@ apiRouter.post('/sites', async (req, res) => {
       (socialGalleryUrls.length ? socialGalleryUrls : undefined);
 
     const modules = pickModules(body.businessType, body.preferredModules);
-    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections, undefined, variationSeed, body.siteType, body.landingConfig);
+    const html = await buildSite(brandCard, modules, heroImageUrl, heroVideoUrl, galleryImageUrls, body.customSections, undefined, variationSeed, body.siteType, body.landingConfig, body.templateModuleId);
 
     const site: GeneratedSite = {
       id: existingSite?.id ?? randomUUID(),
@@ -124,6 +125,7 @@ apiRouter.post('/sites', async (req, res) => {
       heroVideoUrl,
       galleryImageUrls,
       siteType: body.siteType ?? 'full',
+      templateModuleId: body.templateModuleId,
     };
 
     const published = publishSite(site, getBaseUrl(req));
@@ -132,6 +134,11 @@ apiRouter.post('/sites', async (req, res) => {
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message } as ApiResponse<null>);
   }
+});
+
+// GET /api/modules - list available cinematic module templates
+apiRouter.get('/modules', (_req, res) => {
+  res.json({ success: true, data: listModules() } as ApiResponse<ReturnType<typeof listModules>>);
 });
 
 // GET /api/sites - list all sites

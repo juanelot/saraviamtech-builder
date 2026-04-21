@@ -81,6 +81,9 @@ app.use('/generations', express.static(join(__dirname, '../data/generations')));
 // Serve user-uploaded assets
 app.use('/uploads', express.static(join(__dirname, '../data/uploads')));
 
+// Serve module HTML files for iframe previews (authenticated — inside auth guard)
+app.use('/modules-preview', express.static(join(__dirname, '../modules')));
+
 // Serve frontend app — no-cache on HTML so browsers always get the latest version
 app.use('/', express.static(join(__dirname, '../public/app'), {
   setHeaders(res, filePath) {

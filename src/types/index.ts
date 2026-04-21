@@ -107,6 +107,7 @@ export interface GeneratedSite {
   heroVideoUrl?: string;
   galleryImageUrls?: string[];
   siteType?: SiteType;
+  templateModuleId?: string;
 }
 
 export interface SiteRegistry {
@@ -114,7 +115,7 @@ export interface SiteRegistry {
   updatedAt: string;
 }
 
-export type SiteType = 'full' | 'landing';
+export type SiteType = 'full' | 'landing' | 'template';
 
 export interface LandingConfig {
   /** Primary conversion goal shown above the fold */
@@ -143,8 +144,9 @@ export interface CreateSiteRequest {
   galleryImageUrls?: string[];  // additional images for gallery/carousel
   customSections?: string[];    // optional ordered list of section types to override AI plan
   socialUrls?: string[];        // URLs de redes sociales o sitio web del negocio para scraping
-  siteType?: SiteType;          // 'full' (default) or 'landing' (single-goal conversion page)
+  siteType?: SiteType;          // 'full' (default) | 'landing' | 'template'
   landingConfig?: LandingConfig; // extra config when siteType === 'landing'
+  templateModuleId?: string;    // module filename without .html, e.g. 'zoom-parallax'
 }
 
 export interface ApiResponse<T> {
