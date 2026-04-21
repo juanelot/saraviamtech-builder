@@ -32,6 +32,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copiar archivos estáticos
 COPY public ./public
+COPY modules ./modules
 
 # Crear directorios de datos
 RUN mkdir -p data/generations/images data/generations/videos data/uploads public/sites
