@@ -1153,7 +1153,7 @@ function setStep(n) {
   document.querySelectorAll('.step-panel').forEach(el => el.classList.add('hidden'));
   show(n);
   $('sidebar-step-badge').textContent = `${n}/5`;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo(0, 0);
 }
 
 function setLoading(btnId, spinId, loading) {
