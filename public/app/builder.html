@@ -1,9 +1,9 @@
-<!-- BUILD:2026-04-21T04 -->
+<!-- BUILD:2026-04-21T05 -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <script>console.log('[builder] build=2026-04-21T04');</script>
+  <script>console.log('[builder] build=2026-04-21T05');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Builder</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -30,7 +30,10 @@
       --radius: 0.75rem;
     }
 
-    html { scroll-behavior: smooth; }
+    html, body {
+      height: 100dvh;
+      overflow: hidden;
+    }
 
     body {
       background: var(--bg);
@@ -38,8 +41,6 @@
       font-family: 'Outfit', sans-serif;
       font-size: 1rem;
       line-height: 1.6;
-      height: 100dvh;
-      overflow: hidden;
     }
 
     /* noise grain */
@@ -55,7 +56,6 @@
       display: grid;
       grid-template-columns: 240px 1fr;
       height: 100dvh;
-      overflow: hidden;
     }
 
     /* ── Sidebar ── */
