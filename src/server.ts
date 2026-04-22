@@ -54,7 +54,8 @@ app.post('/api/auth/logout', (_req: Request, res: Response) => {
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Public paths: login page, its assets, generated sites, verify endpoint already handled above
-  const pub = ['/login.html', '/favicon.png', '/sites/', '/api/auth/'];
+  // /uploads/ and /generations/ must be public so end-clients viewing published sites can load images/videos
+  const pub = ['/login.html', '/favicon.png', '/sites/', '/api/auth/', '/uploads/', '/generations/'];
   if (pub.some(p => req.path.startsWith(p))) return next();
 
   if (!isAuthenticated(req)) {
