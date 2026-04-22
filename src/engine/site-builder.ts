@@ -558,6 +558,43 @@ export async function buildSite(
       [style*="writing-mode: vertical"] { display: none !important; }
       /* Ajustar padding de hero para no quedar bajo nav */
       #hero > div { padding-bottom: 3rem !important; }
+      /* ── Rescate de columnas con media que colapsan a 0px cuando el grid cae a 1 col ── */
+      /* hero-split brutalist/cinematic: wrapper height:100% queda sin altura al colapsar */
+      [style*="height:100%"][style*="overflow:hidden"] {
+        min-height: 320px !important;
+      }
+      /* Video de hero full-bleed: 16:9 forzado + object-fit:cover recorta demasiado en portrait.
+         Lo dejamos caber sin crop usando contain y aspect-ratio, sin tocar el renderer. */
+      section video[style*="object-fit:cover"] {
+        object-fit: cover !important;
+        aspect-ratio: auto !important;
+      }
+      /* Videos decorativos absolutos dentro de secciones largas — limitar alto */
+      section > div > video[autoplay],
+      section video[style*="position:absolute"] {
+        max-height: 70svh !important;
+      }
+      /* ── Imágenes decorativas absolutas (editorial/deco heroes) — todas las permutaciones ── */
+      [style*="position:absolute"][style*="width:38%"],
+      [style*="position:absolute"][style*="width:45%"],
+      [style*="position:absolute"][style*="width:55%"],
+      [style*="position:absolute"][style*="width:40%"],
+      [style*="position:absolute"][style*="width:50%"] {
+        display: none !important;
+      }
+      /* ── Carousel: slides con min 300px desbordan en pantallas 320-360px ── */
+      [style*="scroll-snap-align:start"] {
+        width: 85vw !important;
+        max-width: 85vw !important;
+        min-width: 0 !important;
+      }
+      /* ── Masonry fallback extra (por si algún render usó columns inline) ── */
+      [style*="columns:3"] { columns: 1 !important; }
+      [style*="columns: 3"] { columns: 1 !important; }
+      /* ── Reducir tamaños tipográficos display inline (clamp ya ayuda, pero reforzamos) ── */
+      [style*="font-size:clamp"][style*="vw"] {
+        letter-spacing: -0.02em !important;
+      }
     }
     @media (max-width: 480px) {
       /* Tipografía: limitar tamaños mínimos de h1 */
@@ -567,9 +604,22 @@ export async function buildSite(
       section { padding-left: 1rem !important; padding-right: 1rem !important; }
       /* Botones: stackear verticalmente */
       [style*="display:flex"][style*="gap:1rem"] { flex-wrap: wrap !important; }
-      /* Imagen lateral decorativa en heroes — ocultar */
+      /* Imagen lateral decorativa en heroes — ocultar (todas las permutaciones de orden) */
       [style*="right:0;top:0;width:45%"],
-      [style*="right:0;top:0;width:38%"] { display: none !important; }
+      [style*="right:0;top:0;width:38%"],
+      [style*="top:0;right:0;width:45%"],
+      [style*="top:0;right:0;width:38%"],
+      [style*="right: 0"][style*="top: 0"][style*="width: 38%"],
+      [style*="right: 0"][style*="top: 0"][style*="width: 45%"] { display: none !important; }
+      /* Carousel aún más estrecho en móviles muy pequeños */
+      [style*="scroll-snap-align:start"] {
+        width: 88vw !important;
+        max-width: 88vw !important;
+      }
+      /* Rescate de altura mínima: en pantallas muy chicas, dar margen de respiro a medios */
+      [style*="height:100%"][style*="overflow:hidden"] {
+        min-height: 260px !important;
+      }
     }
   </style>
   ${tokens.grainOverlay ? grainStyle() : ''}
