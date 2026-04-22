@@ -3,7 +3,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <script>console.log('[builder] build=2026-04-21T05');</script>
+  <script>console.log('[builder] build=2026-04-21T06');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaraviamTech — Builder</title>
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -1153,16 +1153,12 @@ function setStep(n) {
     if (s < n) el.classList.add('done');
     else if (s === n) el.classList.add('active');
   });
+  const main = document.querySelector('.main');
   document.querySelectorAll('.step-panel').forEach(el => el.classList.add('hidden'));
   show(n);
   $('sidebar-step-badge').textContent = `${n}/5`;
-  // Scroll the main content area to top after paint
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const main = document.querySelector('.main');
-      if (main) main.scrollTop = 0;
-    });
-  });
+  if (main) main.scrollTop = 0;
+  requestAnimationFrame(() => { if (main) main.scrollTop = 0; });
 }
 
 function setLoading(btnId, spinId, loading) {
