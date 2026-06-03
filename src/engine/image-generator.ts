@@ -46,7 +46,7 @@ async function buildImagePrompts(
   if (hasOpenAI()) {
     try {
       const result = await miniChat(
-        `You are a commercial photography art director writing prompts for an AI image generator (nano-banana/Flux). Write ${count} distinct image prompts for hero/gallery photos. Each prompt should be specific, cinematic, and visually rich. Focus on: subject, lighting style, camera angle, background, color palette, mood. No people, no text, no watermarks. Return ONLY a JSON array of ${count} strings.`,
+        `You are a commercial photography art director writing prompts for an AI image generator (gpt-image-2). Write ${count} distinct image prompts for hero/gallery photos. Each prompt should be specific, cinematic, and visually rich. Focus on: subject, lighting style, camera angle, background, color palette, mood. No people, no text, no watermarks. Return ONLY a JSON array of ${count} strings.`,
         `Business: "${businessName}" | Industry: ${businessType} | Mood: ${mood} | Color palette: ${palette}. Generate ${count} varied prompts — different angles, lighting styles, and subjects within this industry. Each prompt max 80 words.`,
       );
       const parsed = parseJSON<string[]>(result);
@@ -126,10 +126,10 @@ function extractImageUrl(data: any): string | null {
 async function submitImageTask(prompt: string): Promise<{ taskId: string; imageUrl: string | null }> {
   const url = `${KIEAI_BASE}/createTask`;
   const reqBody = JSON.stringify({
-    model: 'google/nano-banana',
-    input: { prompt, output_format: 'jpeg', image_size: '16:9' },
+    model: 'gpt-image-2-text-to-image',
+    input: { prompt, aspect_ratio: '16:9', resolution: '1K' },
   });
-  console.log('[image-gen] POST', url);
+  console.log('[image-gen] gpt-image-2 POST', url);
 
   let res: Response;
   try {
@@ -150,7 +150,7 @@ async function submitImageTask(prompt: string): Promise<{ taskId: string; imageU
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`nano-banana submit error ${res.status}: ${err}`);
+    throw new Error(`gpt-image-2 submit error ${res.status}: ${err}`);
   }
 
   const raw = await res.text();

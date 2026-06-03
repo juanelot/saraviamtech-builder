@@ -46,7 +46,7 @@ async function buildVideoPrompt(
   if (hasOpenAI()) {
     try {
       const result = await miniChat(
-        'You are a cinematic video director writing prompts for Kling AI (image-to-video). Write a single vivid, specific video motion prompt. Focus on: subject motion, camera movement, lighting style, depth of field, and mood. No text, no people, no watermarks. Under 120 words. Return ONLY the prompt, no quotes, no explanation.',
+        'You are a cinematic video director writing prompts for Grok Imagine (image-to-video). Write a single vivid, specific video motion prompt. Focus on: subject motion, camera movement, lighting style, depth of field, and mood. No text, no people, no watermarks. Under 120 words. Return ONLY the prompt, no quotes, no explanation.',
         `Business: "${businessName}" | Industry: ${businessType} | Mood: ${mood} | Hero subject: ${subject} | Desired motion: ${action}. Make it cinematic, rich in visual detail, and specific to this industry. Vary camera angles and motion styles.`,
       );
       if (result && result.trim().length > 20) {
@@ -104,15 +104,14 @@ export async function submitVideoTask(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'kling-3.0/video',
+      model: 'grok-imagine/image-to-video',
       input: {
         prompt,
         image_urls: [imageUrl],
-        sound: false,
-        duration: '5',
+        mode: 'normal',
+        duration: '6',
+        resolution: '480p',
         aspect_ratio: '16:9',
-        mode: 'std',
-        multi_shots: false,
       },
     }),
   });
@@ -120,13 +119,13 @@ export async function submitVideoTask(
   const raw = await response.text();
   console.log('[video-gen] createTask status:', response.status, 'body:', raw.slice(0, 300));
 
-  if (!response.ok) throw new Error(`Kling API error ${response.status}: ${raw}`);
+  if (!response.ok) throw new Error(`Grok Imagine API error ${response.status}: ${raw}`);
 
   let json: any;
   try { json = JSON.parse(raw); } catch { throw new Error('Kling createTask not JSON: ' + raw.slice(0, 200)); }
 
   const taskId = json?.data?.taskId ?? json?.data?.task_id ?? json?.taskId ?? null;
-  if (!taskId) throw new Error('Kling createTask: no taskId in response: ' + raw.slice(0, 300));
+  if (!taskId) throw new Error('Grok Imagine createTask: no taskId in response: ' + raw.slice(0, 300));
 
   console.log('[video-gen] taskId:', taskId);
 
