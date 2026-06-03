@@ -423,7 +423,10 @@ NODE_ENV=production
 
 **4. Deploy the stack**
 
-> Para actualizar después de un cambio en el código: en Portainer ve al stack → **Update the stack** con la opción **Re-pull image** activada, o reconstruye manualmente con `docker compose up -d --build` desde el servidor.
+> Para actualizar después de un cambio en el código, ejecuta en el VPS:
+> ```bash
+> git pull && docker build --no-cache -t saraviamtech-builder-saraviam-builder:latest . && docker stack deploy -c docker-stack.yml saraviam && docker service update --force saraviam_saraviam_builder
+> ```
 
 ---
 
